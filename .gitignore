@@ -1,0 +1,44 @@
+# Internal planning and drafts
+docs_main/
+GIT_HUB_REPO.md
+LINKEDIN_HUB_INDEX.md
+LIS Terminal Bench/
+
+# Internal project files
+CLAUDE.md
+MONDAY_LAUNCH_PLAN.md
+launch.sh
+design/
+docs/
+SESSION_HANDOFF_*.md
+*.bak
+
+# Claude Code session data
+.claude/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,9 @@
+[project]
+name = "lis-swap-contamination-triage"
+version = "1.0.0"
+description = "LIS specimen triage workflow repair task"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+dev-dependencies = []
