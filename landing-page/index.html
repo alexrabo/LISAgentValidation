@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Auditable, workflow-level validation artifacts for AI agents in Laboratory Information Systems">
+    <meta name="keywords" content="LIS, AI validation, Terminal Bench, clinical labs, healthcare AI, CAP validation">
+    <meta name="author" content="Alex Openstone">
+    <title>LIS AI Validation Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: #fff;
+            border-bottom: 1px solid #e1e4e8;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0366d6;
+        }
+
+        nav a {
+            margin-left: 30px;
+            text-decoration: none;
+            color: #586069;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: #0366d6;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero .subtitle {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Problem Section */
+        .problem {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #24292e;
+        }
+
+        .section-content {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #586069;
+        }
+
+        .highlight-box {
+            background: #fff5e6;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .highlight-box strong {
+            color: #e65100;
+        }
+
+        /* Solution Section */
+        .solution {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #24292e;
+        }
+
+        .feature-card p {
+            color: #586069;
+            font-size: 15px;
+        }
+
+        /* First Task Section */
+        .first-task {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .task-details {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #f6f8fa;
+            padding: 40px;
+            border-radius: 8px;
+        }
+
+        .task-details h3 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #0366d6;
+        }
+
+        .criteria {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .criteria-item {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .criteria-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .criteria-item strong {
+            display: block;
+            font-size: 16px;
+            color: #24292e;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        footer {
+            background: #24292e;
+            color: #c9d1d9;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .disclaimer {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero .subtitle {
+                font-size: 18px;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .task-details {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">LIS AI Validation</div>
+                <nav>
+                    <a href="#problem">Challenge</a>
+                    <a href="#solution">Approach</a>
+                    <a href="#task">First Task</a>
+                    <a href="https://github.com/alexrabo/LISAgentValidation">GitHub</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>LIS AI Validation Framework</h1>
+            <p class="subtitle">Auditable, workflow-level validation artifacts for AI agents in Laboratory Information Systems</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/alexrabo/LISAgentValidation" class="btn btn-primary">View on GitHub</a>
+                <a href="#task" class="btn btn-secondary">Explore First Task</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="problem" class="problem">
+        <div class="container">
+            <h2 class="section-title">The Challenge</h2>
+            <div class="section-content">
+                <p>Traditional LIS validation assumes deterministic, rule-based systems. AI agents introduce <strong>emergent capabilities</strong> that escape change-based validation.</p>
+
+                <div class="highlight-box">
+                    <strong>CAP GEN.43875 requires validation "based on changes made."</strong><br>
+                    But you can't validate changes you don't know exist.
+                </div>
+
+                <p>When you update your LIS AI from GPT-4 to Claude Sonnet 4.5:</p>
+                <ul style="margin-left: 20px; margin-top: 15px;">
+                    <li>Documented: "Improved reasoning"</li>
+                    <li>What emerged: Proactive aliquot swap detection</li>
+                    <li>Validation scope: <strong>???</strong></li>
+                </ul>
+
+                <p style="margin-top: 20px;">AI agents in regulated industries need <strong>workflow-level validation</strong>, not just threshold accuracy.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solution" class="solution">
+        <div class="container">
+            <h2 class="section-title">Our Approach</h2>
+            <div class="section-content">
+                <p style="text-align: center;">Build a library of <strong>Terminal Bench validation tasks</strong> that provide auditable, reproducible validation artifacts grounded in real laboratory practices.</p>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Workflow-Level Testing</h3>
+                    <p>Test reasoning across analytes and workflows, not just individual thresholds</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Auditable Artifacts</h3>
+                    <p>Versioned, reproducible tasks for regulatory compliance</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <h3>Real Failure Modes</h3>
+                    <p>Grounded in established laboratory practices and actual safety risks</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚖️</div>
+                    <h3>Terminal Bench Standard</h3>
+                    <p>Standardized evaluation with Harbor execution framework</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- First Task Section -->
+    <section id="task" class="first-task">
+        <div class="container">
+            <h2 class="section-title">First Validated Artifact</h2>
+            <div class="section-content" style="text-align: center;">
+                <p><strong>LIS Swap & Contamination Triage</strong> is the first auditable, reproducible, validated task in a growing library.</p>
+            </div>
+
+            <div class="task-details">
+                <h3>What It Tests</h3>
+                <p>This Terminal Bench task evaluates whether AI agents can correctly triage laboratory specimens for:</p>
+                <ul style="margin: 20px 0 20px 20px;">
+                    <li><strong>EDTA contamination</strong> — Elevated K, depressed Ca from tube contamination</li>
+                    <li><strong>Identity swaps</strong> — Specimens assigned to wrong patients</li>
+                    <li><strong>Normal results</strong> — Safe to release</li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Why This Matters</h3>
+                <ul style="margin: 15px 0 20px 20px;">
+                    <li>Threshold-only validation <strong>passes</strong> (individual values may be in range)</li>
+                    <li>Workflow reasoning <strong>fails</strong> (agents must detect cross-analyte patterns)</li>
+                    <li>Safety-critical decisions (zero unsafe releases required)</li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Evaluation Criteria</h3>
+                <div class="criteria">
+                    <div class="criteria-item">
+                        <div class="criteria-icon">✓</div>
+                        <strong>F1 ≥ 0.80</strong>
+                        <p style="font-size: 14px; margin-top: 5px; color: #586069;">Precision & recall</p>
+                    </div>
+                    <div class="criteria-item">
+                        <div class="criteria-icon">🛡️</div>
+                        <strong>Zero Unsafe Releases</strong>
+                        <p style="font-size: 14px; margin-top: 5px; color: #586069;">Safety constraint</p>
+                    </div>
+                    <div class="criteria-item">
+                        <div class="criteria-icon">📊</div>
+                        <strong>False Hold ≤ 0.34</strong>
+                        <p style="font-size: 14px; margin-top: 5px; color: #586069;">Minimize false positives</p>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://github.com/alexrabo/LISAgentValidation" class="btn btn-primary">View Task on GitHub</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Join the Community</h2>
+            <p>We welcome contributions from the laboratory community to expand this framework<br>with additional workflow-level validation tasks.</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/alexrabo/LISAgentValidation" class="btn btn-primary">Contribute on GitHub</a>
+                <a href="mailto:alexrabo@gmail.com" class="btn btn-secondary">Get in Touch</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p><strong>LIS AI Validation Framework</strong></p>
+            <p style="margin: 10px 0;">Built for real-world laboratory safety. Validated with Terminal Bench rigor.</p>
+            <p>
+                <a href="https://github.com/alexrabo/LISAgentValidation">GitHub</a> •
+                <a href="mailto:alexrabo@gmail.com">Contact</a>
+            </p>
+            <p class="disclaimer">
+                This is professional development research and is not affiliated with any organization.<br>
+                This framework is provided for educational and research purposes.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

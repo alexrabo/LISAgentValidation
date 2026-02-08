@@ -1,0 +1,68 @@
+{
+  "batch_id": "BATCH-VIS-001",
+  "batch_constraints": {
+    "max_holds": 2
+  },
+  "patients": [
+    {
+      "patient_id": "P001",
+      "prior": {
+        "mean": {"K": 4.1, "Ca": 9.4, "Na": 140, "Cl": 103, "HCO3": 24, "Glucose": 95},
+        "sd": {"K": 0.25, "Ca": 0.35, "Na": 2.5, "Cl": 2.0, "HCO3": 2.0, "Glucose": 12}
+      }
+    },
+    {
+      "patient_id": "P002",
+      "prior": {
+        "mean": {"K": 4.6, "Ca": 9.0, "Na": 138, "Cl": 101, "HCO3": 22, "Glucose": 110},
+        "sd": {"K": 0.3, "Ca": 0.4, "Na": 3.0, "Cl": 2.2, "HCO3": 2.4, "Glucose": 15}
+      }
+    },
+    {
+      "patient_id": "P003",
+      "prior": {
+        "mean": {"K": 3.9, "Ca": 9.6, "Na": 142, "Cl": 105, "HCO3": 25, "Glucose": 88},
+        "sd": {"K": 0.22, "Ca": 0.33, "Na": 2.2, "Cl": 1.8, "HCO3": 1.9, "Glucose": 10}
+      }
+    },
+    {
+      "patient_id": "P004",
+      "prior": {
+        "mean": {"K": 4.2, "Ca": 9.2, "Na": 139, "Cl": 102, "HCO3": 23, "Glucose": 102},
+        "sd": {"K": 0.24, "Ca": 0.36, "Na": 2.7, "Cl": 2.1, "HCO3": 2.1, "Glucose": 13}
+      }
+    }
+  ],
+  "specimens": [
+    {
+      "specimen_id": "S100",
+      "patient_id": "P004",
+      "values": {"K": 4.21, "Ca": 9.16, "Na": 140.4, "Cl": 99.0, "HCO3": 22.3, "Glucose": 108.4},
+      "truth": {"label": "NORMAL"}
+    },
+    {
+      "specimen_id": "S101",
+      "patient_id": "P002",
+      "values": {"K": 6.5, "Ca": 7.4, "Na": 137.4, "Cl": 101.3, "HCO3": 22.6, "Glucose": 127.5},
+      "truth": {"label": "CONTAMINATION", "type": "EDTA_like"}
+    },
+    {
+      "specimen_id": "S102",
+      "patient_id": "P001",
+      "values": {"K": 4.05, "Ca": 9.38, "Na": 140.5, "Cl": 103.5, "HCO3": 24.2, "Glucose": 94.0},
+      "truth": {"label": "NORMAL"}
+    },
+    {
+      "specimen_id": "S103",
+      "patient_id": "P003",
+      "values": {"K": 6.4, "Ca": 7.5, "Na": 141.0, "Cl": 104.0, "HCO3": 24.5, "Glucose": 92.0},
+      "truth": {"label": "CONTAMINATION", "type": "EDTA_like"}
+    },
+    {
+      "specimen_id": "S104",
+      "patient_id": "P002",
+      "values": {"K": 6.2, "Ca": 7.9, "Na": 137.4, "Cl": 101.3, "HCO3": 22.6, "Glucose": 127.5},
+      "truth": {"label": "NORMAL"}
+    }
+  ]
+}
