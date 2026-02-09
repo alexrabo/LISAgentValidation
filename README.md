@@ -172,9 +172,9 @@ Detects EDTA-like contamination signatures using geometric mean of normalized co
 - **Pattern recognition** — Cross-analyte consistency
 
 ### 2. Swap Detection
-Pairwise comparison of all specimens in batch:
+Pairwise comparison of all specimens in batch using delta-check methodology:
 - Computes whether swapping two specimens' patient assignments reduces mismatch
-- Uses weighted z-score fit against patient historical data
+- Uses standardized deltas / RCV-style limits against patient historical data
 - Score = relative improvement in fit
 
 ### 3. Thresholded Decisions
@@ -192,7 +192,7 @@ If HOLDs exceed `max_holds` batch constraint, weaker HOLDs are downgraded to REL
 |-----------|----------|---------|
 | `contamination_hold_threshold` | `decision_policy` | Min contamination score to HOLD |
 | `swap_hold_threshold` | `decision_policy` | Min swap improvement score to HOLD |
-| `zscore_threshold` | root | Z-score divisor for swap mismatch |
+| `zscore_threshold` | root | Delta-check threshold (standardized difference divisor for swap detection) |
 | `K_min`, `Ca_max` | `contamination_signatures[].rule` | Trigger levels for contamination |
 | `analyte_weights` | `swap_detection` | Per-analyte weights for swap mismatch |
 
@@ -207,6 +207,9 @@ If HOLDs exceed `max_holds` batch constraint, weaker HOLDs are downgraded to REL
 
 ### Critical Safety Constraint
 **Zero unsafe releases** — Never release a contaminated or swapped specimen. This is a hard requirement that reflects real laboratory safety standards.
+
+### Clinical Realism
+This task models delta-check and specimen-quality rule-outs used in autoverification and middleware systems. The output is HOLD for manual review, not a definitive diagnosis. This reflects real-world laboratory workflows where automated systems flag specimens for human review rather than making final clinical determinations.
 
 ---
 
@@ -246,6 +249,37 @@ This approach aligns with modern agent evaluation frameworks (Harbor, Anthropic 
 This framework welcomes contributions from the laboratory community. If you're working on AI validation in regulated industries and would like to collaborate or contribute additional workflow-level validation tasks, please open an issue or submit a pull request.
 
 **Contact:** Alex Openstone ([alexrabo@gmail.com](mailto:alexrabo@gmail.com))
+
+---
+
+## References
+
+### Regulatory Standards
+- **CAP GEN.43875** — Autoverification Validation and Revalidation Requirements
+  [https://documents-cloud.cap.org/pdf/QA%20GEN.43875.pdf](https://documents-cloud.cap.org/pdf/QA%20GEN.43875.pdf)
+
+- **CLSI AUTO10-A** — Autoverification of Clinical Laboratory Test Results
+  Clinical and Laboratory Standards Institute (2006)
+
+- **CLSI AUTO15-ED1** — Autoverification of Medical Laboratory Results for Specific Disciplines
+  Clinical and Laboratory Standards Institute (2019)
+
+- **FDA Clinical Decision Support Software Guidance** (Updated January 2026)
+  U.S. Food and Drug Administration
+
+### Research Literature
+- **Yang YC, et al. (2025)** — "Validation gap analysis for AI in clinical laboratories"
+  *Preprint*. doi: [10.21203/rs.3.rs-5934891/v1](https://doi.org/10.21203/rs.3.rs-5934891/v1)
+
+- **BMC Medical Informatics and Decision Making (2021)** — "Autoverification in clinical laboratories: a systematic review"
+  [https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-021-01545-3](https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-021-01545-3)
+
+### Evaluation Frameworks
+- **Terminal Bench** — Laude Institute / Stanford HAI
+  Standardized agent evaluation framework
+
+- **Harbor** — Terminal Bench 2.0 execution harness
+  [https://github.com/stanford-hai/harbor](https://github.com/stanford-hai/harbor)
 
 ---
 
