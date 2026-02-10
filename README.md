@@ -206,7 +206,7 @@ If HOLDs exceed `max_holds` batch constraint, weaker HOLDs are downgraded to REL
 - **SWAP** — Specimen assigned to wrong patient (identity mismatch)
 
 ### Critical Safety Constraint
-**Zero unsafe releases** — Never release a contaminated or swapped specimen. This is a hard requirement that reflects real laboratory safety standards.
+**Zero unsafe releases** — No contaminated or swapped specimens should be released. This is a hard requirement that reflects real laboratory safety standards.
 
 ### Clinical Realism
 This task models delta-check and specimen-quality rule-outs used in autoverification and middleware systems. The output is HOLD for manual review, not a definitive diagnosis. This reflects real-world laboratory workflows where automated systems flag specimens for human review rather than making final clinical determinations.
