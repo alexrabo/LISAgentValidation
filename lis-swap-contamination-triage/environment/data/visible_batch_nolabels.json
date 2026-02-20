@@ -1,63 +1,52 @@
 {
-  "batch_id": "BATCH-VIS-001",
-  "batch_constraints": {
-    "max_holds": 2
-  },
+  "batch_id": "BATCH-VIS-002",
   "patients": [
     {
       "patient_id": "P001",
       "prior": {
-        "mean": {"K": 4.1, "Ca": 9.4, "Na": 140, "Cl": 103, "HCO3": 24, "Glucose": 95},
-        "sd": {"K": 0.25, "Ca": 0.35, "Na": 2.5, "Cl": 2.0, "HCO3": 2.0, "Glucose": 12}
+        "mean": {"K": 4.1, "Ca": 9.4, "Na": 140, "Cl": 103, "HCO3": 24, "Glucose": 92},
+        "sd":   {"K": 0.25, "Ca": 0.35, "Na": 2.5, "Cl": 2.0, "HCO3": 2.0, "Glucose": 12}
       }
     },
     {
       "patient_id": "P002",
       "prior": {
-        "mean": {"K": 4.6, "Ca": 9.0, "Na": 138, "Cl": 101, "HCO3": 22, "Glucose": 110},
-        "sd": {"K": 0.3, "Ca": 0.4, "Na": 3.0, "Cl": 2.2, "HCO3": 2.4, "Glucose": 15}
+        "mean": {"K": 5.0, "Ca": 9.0, "Na": 138, "Cl": 101, "HCO3": 22, "Glucose": 110},
+        "sd":   {"K": 0.30, "Ca": 0.40, "Na": 3.0, "Cl": 2.2, "HCO3": 2.4, "Glucose": 15}
       }
     },
     {
       "patient_id": "P003",
       "prior": {
         "mean": {"K": 3.9, "Ca": 9.6, "Na": 142, "Cl": 105, "HCO3": 25, "Glucose": 88},
-        "sd": {"K": 0.22, "Ca": 0.33, "Na": 2.2, "Cl": 1.8, "HCO3": 1.9, "Glucose": 10}
+        "sd":   {"K": 0.22, "Ca": 0.33, "Na": 2.2, "Cl": 1.8, "HCO3": 1.9, "Glucose": 10}
       }
     },
     {
       "patient_id": "P004",
       "prior": {
-        "mean": {"K": 4.2, "Ca": 9.2, "Na": 139, "Cl": 102, "HCO3": 23, "Glucose": 102},
-        "sd": {"K": 0.24, "Ca": 0.36, "Na": 2.7, "Cl": 2.1, "HCO3": 2.1, "Glucose": 13}
+        "mean": {"K": 4.3, "Ca": 9.1, "Na": 136, "Cl": 98, "HCO3": 21, "Glucose": 218},
+        "sd":   {"K": 0.24, "Ca": 0.36, "Na": 2.7, "Cl": 2.1, "HCO3": 2.1, "Glucose": 25}
+      }
+    },
+    {
+      "patient_id": "P005",
+      "prior": {
+        "mean": {"K": 4.8, "Ca": 8.8, "Na": 137, "Cl": 99, "HCO3": 20, "Glucose": 105},
+        "sd":   {"K": 0.35, "Ca": 0.45, "Na": 3.2, "Cl": 2.5, "HCO3": 2.5, "Glucose": 18}
       }
     }
   ],
   "specimens": [
-    {
-      "specimen_id": "S100",
-      "patient_id": "P004",
-      "values": {"K": 4.21, "Ca": 9.16, "Na": 140.4, "Cl": 99.0, "HCO3": 22.3, "Glucose": 108.4}
-    },
-    {
-      "specimen_id": "S101",
-      "patient_id": "P002",
-      "values": {"K": 6.5, "Ca": 7.4, "Na": 137.4, "Cl": 101.3, "HCO3": 22.6, "Glucose": 127.5}
-    },
-    {
-      "specimen_id": "S102",
-      "patient_id": "P001",
-      "values": {"K": 4.05, "Ca": 9.38, "Na": 140.5, "Cl": 103.5, "HCO3": 24.2, "Glucose": 94.0}
-    },
-    {
-      "specimen_id": "S103",
-      "patient_id": "P003",
-      "values": {"K": 6.4, "Ca": 7.5, "Na": 141.0, "Cl": 104.0, "HCO3": 24.5, "Glucose": 92.0}
-    },
-    {
-      "specimen_id": "S104",
-      "patient_id": "P002",
-      "values": {"K": 6.2, "Ca": 7.9, "Na": 137.4, "Cl": 101.3, "HCO3": 22.6, "Glucose": 127.5}
-    }
+    {"specimen_id": "S100", "patient_id": "P001", "values": {"K": 4.15, "Ca": 9.42, "Na": 140.3, "Cl": 103.2, "HCO3": 24.1, "Glucose": 94}},
+    {"specimen_id": "S101", "patient_id": "P002", "values": {"K": 6.9,  "Ca": 7.1,  "Na": 137.5, "Cl": 100.8, "HCO3": 21.8, "Glucose": 112}},
+    {"specimen_id": "S102", "patient_id": "P003", "values": {"K": 3.92, "Ca": 9.58, "Na": 142.1, "Cl": 105.3, "HCO3": 25.2, "Glucose": 90}},
+    {"specimen_id": "S103", "patient_id": "P004", "values": {"K": 4.28, "Ca": 9.15, "Na": 136.2, "Cl": 97.8,  "HCO3": 21.2, "Glucose": 215}},
+    {"specimen_id": "S104", "patient_id": "P005", "values": {"K": 4.82, "Ca": 8.78, "Na": 136.8, "Cl": 99.1,  "HCO3": 20.3, "Glucose": 108}},
+    {"specimen_id": "S105", "patient_id": "P001", "values": {"K": 4.31, "Ca": 9.12, "Na": 135.9, "Cl": 98.1,  "HCO3": 21.0, "Glucose": 221}},
+    {"specimen_id": "S106", "patient_id": "P004", "values": {"K": 4.14, "Ca": 9.41, "Na": 140.1, "Cl": 103.0, "HCO3": 24.3, "Glucose": 90}},
+    {"specimen_id": "S107", "patient_id": "P002", "values": {"K": 6.2,  "Ca": 7.8,  "Na": 137.9, "Cl": 101.1, "HCO3": 22.0, "Glucose": 111}},
+    {"specimen_id": "S108", "patient_id": "P003", "values": {"K": 3.88, "Ca": 9.62, "Na": 141.8, "Cl": 104.8, "HCO3": 25.0, "Glucose": 87}},
+    {"specimen_id": "S109", "patient_id": "P005", "values": {"K": 4.75, "Ca": 8.85, "Na": 137.2, "Cl": 98.8,  "HCO3": 19.8, "Glucose": 103}}
   ]
 }

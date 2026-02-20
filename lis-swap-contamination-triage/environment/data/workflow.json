@@ -2,7 +2,7 @@
   "version": "0.2",
   "objective": "Flag specimens likely contaminated or swapped; hold for review.",
   "analytes": ["K", "Ca", "Na", "Cl", "HCO3", "Glucose"],
-  "zscore_threshold": 3.0,
+  "delta_check_threshold": 3.0,
   "swap_detection": {
     "enabled": true,
     "pairwise": true,
@@ -29,6 +29,6 @@
   ],
   "decision_policy": {
     "contamination_hold_threshold": 0.8,
-    "swap_hold_threshold": 0.6
+    "swap_hold_threshold": 0.99
   }
 }

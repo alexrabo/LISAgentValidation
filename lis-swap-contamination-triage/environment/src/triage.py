@@ -10,6 +10,37 @@ Key parameters in workflow.json:
 - swap_hold_threshold: minimum swap improvement score to trigger HOLD
 
 If scores are below thresholds, the specimen is RELEASED even if weak signals exist.
+
+--- Clinical Background ---
+
+CONTAMINATION DETECTION:
+  Uses analyte signature matching (e.g., EDTA-like: elevated K, depressed Ca).
+  Score reflects how strongly the current values match a known contamination pattern.
+
+SWAP DETECTION (Specimen Identity Verification):
+  Uses the Delta Check approach — the standard laboratory method for detecting
+  specimen identity errors. A delta check flags a result when the difference
+  between the current value and the patient's prior result exceeds a threshold.
+
+  Here, the delta check is STANDARDIZED by the patient's prior biological
+  variability (SD), making the threshold patient-independent:
+
+      delta_check(x) = |x - prior_mean| / prior_SD
+
+  This is equivalent to a z-score relative to the patient's own history,
+  also called the "standardized difference" or "delta check divisor" in
+  clinical lab informatics.
+
+  For swap detection, we compare the delta check mismatch score under the
+  ORIGINAL assignment vs. a SWAPPED assignment. If swapping two specimens
+  between their patients produces a substantially better fit (lower combined
+  delta check score), both specimens are flagged as likely swapped.
+
+  Key workflow.json parameter:
+  - zscore_threshold: the delta check divisor threshold — how many SDs of
+    deviation from a patient's prior is considered anomalous
+  - swap_hold_threshold: minimum improvement ratio (original/swapped mismatch)
+    required to trigger a HOLD for identity concern
 """
 from __future__ import annotations
 import argparse
@@ -21,7 +52,18 @@ Json = Dict[str, Any]
 
 
 def zscore(x: float, mean: float, sd: float) -> float:
-    """Calculate z-score for a value given mean and standard deviation."""
+    """Compute the standardized delta check value for a single analyte.
+
+    In clinical laboratory practice, a delta check compares a patient's current
+    result against their prior result. When normalized by the patient's prior
+    biological variability (SD), this becomes the standardized delta check —
+    a patient-independent measure of how anomalous the current value is.
+
+        standardized_delta_check = (current - prior_mean) / prior_SD
+
+    Values with |delta_check| > zscore_threshold are considered anomalous
+    and contribute to the specimen's swap mismatch score.
+    """
     if sd is None or sd == 0:
         return 0.0
     return (x - mean) / sd
@@ -72,9 +114,20 @@ def contamination_score(values: Json, wf: Json) -> Tuple[float, str]:
     return max_score, best_reason
 
 
-def mismatch_score(spec_values: Json, patient: Json, analytes: List[str], 
+def mismatch_score(spec_values: Json, patient: Json, analytes: List[str],
                    weights: Json, zthr: float) -> float:
-    """Calculate weighted mismatch score between specimen values and patient prior."""
+    """Compute the weighted delta check mismatch score for a specimen against a patient.
+
+    For each analyte, calculates the standardized delta check (deviation from the
+    patient's prior mean, normalized by prior SD). Deviations exceeding zthr
+    (the delta check threshold) contribute proportionally to the mismatch score.
+
+    A low score means the specimen values are consistent with this patient's history.
+    A high score means the values are anomalous for this patient — possible identity error.
+
+    Used in swap detection: if specimen A scores low against patient B (but was
+    assigned to patient A), that is evidence of a swap.
+    """
     mean = patient["prior"]["mean"]
     sd = patient["prior"]["sd"]
     score = 0.0
@@ -87,15 +140,26 @@ def mismatch_score(spec_values: Json, patient: Json, analytes: List[str],
     return score
 
 
-def compute_swap_scores(specimens: List[Json], patients_idx: Dict[str, Json], 
+def compute_swap_scores(specimens: List[Json], patients_idx: Dict[str, Json],
                         wf: Json) -> Dict[str, float]:
-    """
-    Compute swap improvement scores for all specimens.
-    
-    Returns dict mapping specimen_id -> best_improvement_score.
-    Score represents how much better the fit is if swapped with another specimen.
-    A score of 0.0 means no swap benefit detected.
-    Higher scores indicate stronger evidence of a swap.
+    """Compute pairwise delta check swap scores for all specimens in the batch.
+
+    This implements the standard laboratory specimen identity verification method:
+    for each pair of specimens, compare the combined delta check mismatch score
+    under the ORIGINAL patient assignments vs. a HYPOTHETICAL SWAP.
+
+    If swapping two specimens between their patients produces a substantially
+    better combined delta check fit, both are flagged with an elevated swap score.
+
+    The improvement ratio is:
+        improvement = (original_mismatch - swapped_mismatch) / original_mismatch
+
+    A positive improvement means the swapped assignment fits the patients' prior
+    histories better — indicating a likely specimen identity error.
+
+    Returns dict mapping specimen_id -> best_improvement_score across all pairs.
+    Score of 0.0 means no swap signal detected for that specimen.
+    Score approaching 1.0 means the swapped assignment is dramatically better fit.
     """
     sd = wf.get("swap_detection", {}) or {}
     if not sd.get("enabled", False):
@@ -103,7 +167,7 @@ def compute_swap_scores(specimens: List[Json], patients_idx: Dict[str, Json],
     
     analytes = wf.get("analytes", [])
     weights = sd.get("analyte_weights", {}) or {}
-    zthr = float(wf.get("zscore_threshold", 3.0))
+    zthr = float(wf.get("delta_check_threshold", 3.0))
     
     # Track best improvement score for each specimen
     scores: Dict[str, float] = {s["specimen_id"]: 0.0 for s in specimens}
