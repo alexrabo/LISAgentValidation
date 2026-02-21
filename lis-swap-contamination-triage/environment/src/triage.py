@@ -69,48 +69,102 @@ def zscore(x: float, mean: float, sd: float) -> float:
     return (x - mean) / sd
 
 
-def contamination_score(values: Json, wf: Json) -> Tuple[float, str]:
+def contamination_score(values: Json, wf: Json,
+                        patient: Optional[Json] = None) -> Tuple[float, str]:
     """
-    Calculate contamination strength score (0.0 to 1.0+).
-    
-    Score is based on how strongly the values match contamination signatures.
-    A score of 0.0 means no contamination signal.
-    Higher scores indicate stronger evidence of contamination.
-    
+    Calculate contamination strength score (0.0 to 1.5).
+
+    Supports two scoring modes controlled by the ``"mode"`` field of each
+    contamination signature in workflow.json:
+
+    ``"absolute"`` (default when ``"mode"`` is absent)
+        Compares raw analyte values against population-level thresholds.
+        Parameters: ``K_min``, ``Ca_max``, ``K_range``, ``Ca_range``.
+        Used as the primary mode when no patient prior is available (new
+        patient, first encounter).
+
+    ``"prior_relative"``
+        Compares each analyte against the *patient's own* prior mean and SD
+        (standardized delta check). This is the preferred clinical approach
+        when a prior exists: it distinguishes a CKD patient's chronically
+        elevated K (small delta from baseline) from an EDTA artifact's
+        acutely elevated K (many SDs above the patient's own history).
+
+        Parameters:
+          - ``K_delta_min``  : K must exceed this many SDs above prior mean
+          - ``Ca_delta_max`` : Ca must fall below this many SDs (negative value)
+          - ``fallback_K_min``, ``fallback_Ca_max``, ``fallback_K_range``,
+            ``fallback_Ca_range``: used automatically when no patient prior
+            is available in the batch.
+
+        Scoring formula (prior_relative):
+          k_score  = clamp(k_zscore  / K_delta_min,  0, 1.5)
+          ca_score = clamp(ca_zscore / Ca_delta_max, 0, 1.5)   # both negative
+          combined = geometric_mean(k_score, ca_score)
+
+        A score of 1.0 means both analytes are exactly at their respective
+        delta thresholds; >1.0 means the contamination signal is stronger.
+
     Returns: (score, reason_string)
     """
     max_score = 0.0
     best_reason = ""
-    
+
     for sig in wf.get("contamination_signatures", []):
         rule = sig.get("rule", {}) or {}
-        k_min = rule.get("K_min")
-        ca_max = rule.get("Ca_max")
-        k_range = rule.get("K_range", 1.0)  # Expected range above K_min
-        ca_range = rule.get("Ca_range", 1.0)  # Expected range below Ca_max
-        
-        k_val = values.get("K", 0)
-        ca_val = values.get("Ca", 99)
-        
-        # Calculate individual component scores
+        mode = sig.get("mode", "absolute")
+        k_val = float(values.get("K", 0))
+        ca_val = float(values.get("Ca", 99))
+
         k_score = 0.0
         ca_score = 0.0
-        
-        if k_min is not None and k_val >= k_min:
-            # How far above the minimum? Normalized by expected range
-            k_score = min((k_val - k_min) / max(k_range, 0.1), 1.5)
-        
-        if ca_max is not None and ca_val <= ca_max:
-            # How far below the maximum? Normalized by expected range
-            ca_score = min((ca_max - ca_val) / max(ca_range, 0.1), 1.5)
-        
-        # Both conditions must be met, combined score is geometric mean
+
+        if mode == "prior_relative" and patient is not None:
+            # --- Prior-relative delta check (preferred when history exists) ---
+            prior_mean = patient["prior"]["mean"]
+            prior_sd = patient["prior"]["sd"]
+            k_zscore = zscore(k_val, float(prior_mean["K"]), float(prior_sd["K"]))
+            ca_zscore = zscore(ca_val, float(prior_mean["Ca"]), float(prior_sd["Ca"]))
+
+            k_delta_min = float(rule.get("K_delta_min", 3.0))
+            ca_delta_max = float(rule.get("Ca_delta_max", -2.5))  # negative
+
+            if k_delta_min > 0:
+                k_score = min(max(0.0, k_zscore / k_delta_min), 1.5)
+            if ca_delta_max < 0:
+                ca_score = min(max(0.0, ca_zscore / ca_delta_max), 1.5)
+
+        elif mode == "prior_relative" and patient is None:
+            # --- Fallback: no prior available, use absolute population thresholds ---
+            k_min = rule.get("fallback_K_min")
+            ca_max = rule.get("fallback_Ca_max")
+            k_range = float(rule.get("fallback_K_range", 1.0))
+            ca_range = float(rule.get("fallback_Ca_range", 1.0))
+
+            if k_min is not None and k_val >= float(k_min):
+                k_score = min((k_val - float(k_min)) / max(k_range, 0.1), 1.5)
+            if ca_max is not None and ca_val <= float(ca_max):
+                ca_score = min((float(ca_max) - ca_val) / max(ca_range, 0.1), 1.5)
+
+        else:
+            # --- Absolute mode (default) ---
+            k_min = rule.get("K_min")
+            ca_max = rule.get("Ca_max")
+            k_range = float(rule.get("K_range", 1.0))
+            ca_range = float(rule.get("Ca_range", 1.0))
+
+            if k_min is not None and k_val >= float(k_min):
+                k_score = min((k_val - float(k_min)) / max(k_range, 0.1), 1.5)
+            if ca_max is not None and ca_val <= float(ca_max):
+                ca_score = min((float(ca_max) - ca_val) / max(ca_range, 0.1), 1.5)
+
+        # Both analyte conditions must be met; combined score is geometric mean
         if k_score > 0 and ca_score > 0:
             combined = (k_score * ca_score) ** 0.5
             if combined > max_score:
                 max_score = combined
                 best_reason = sig.get("hold_reason", "CONTAMINATION_SUSPECTED")
-    
+
     return max_score, best_reason
 
 
@@ -273,7 +327,8 @@ def main() -> int:
         values = s["values"]
         
         # Calculate scores
-        contam_score, contam_reason = contamination_score(values, wf)
+        patient = patients_idx.get(pid)
+        contam_score, contam_reason = contamination_score(values, wf, patient)
         swap_score = swap_scores.get(sid, 0.0)
         internal_scores[sid] = (contam_score, swap_score)
         

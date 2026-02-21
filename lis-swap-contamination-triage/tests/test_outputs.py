@@ -39,7 +39,8 @@ HIDDEN_TRUTH: Dict[str, str] = {
     "S207": "CONTAMINATION",
     "S208": "NORMAL",
     "S209": "NORMAL",
-    "S210": "NORMAL",   # CKD patient — elevated K + low Ca, NOT contamination (false-positive trap)
+    "S210": "NORMAL",        # CKD patient — elevated K + low Ca, NOT contamination (false-positive trap)
+    "S211": "CONTAMINATION", # New patient P013, no prior history — fallback absolute thresholds must catch this
 }
 
 
