@@ -19,7 +19,7 @@
     {
       "name": "EDTA_like",
       "rule": {
-        "K_min": 5.8,
+        "K_min": 7.0,
         "Ca_max": 8.2,
         "K_range": 1.0,
         "Ca_range": 1.0

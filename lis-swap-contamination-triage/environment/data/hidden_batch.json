@@ -2,6 +2,13 @@
   "batch_id": "BATCH-HID-002",
   "patients": [
     {
+      "patient_id": "P012",
+      "prior": {
+        "mean": {"K": 5.5, "Ca": 7.9, "Na": 137, "Cl": 100, "HCO3": 21, "Glucose": 98},
+        "sd":   {"K": 0.32, "Ca": 0.32, "Na": 2.6, "Cl": 2.1, "HCO3": 2.1, "Glucose": 11}
+      }
+    },
+    {
       "patient_id": "P006",
       "prior": {
         "mean": {"K": 4.0, "Ca": 9.3, "Na": 141, "Cl": 104, "HCO3": 23, "Glucose": 98},
@@ -96,6 +103,12 @@
       "specimen_id": "S209",
       "patient_id": "P010",
       "values": {"K": 4.58, "Ca": 9.03, "Na": 137.9, "Cl": 100.8, "HCO3": 21.8, "Glucose": 122},
+      "truth": {"label": "NORMAL"}
+    },
+    {
+      "specimen_id": "S210",
+      "patient_id": "P012",
+      "values": {"K": 6.12, "Ca": 7.93, "Na": 137.2, "Cl": 100.3, "HCO3": 21.2, "Glucose": 97},
       "truth": {"label": "NORMAL"}
     }
   ]
