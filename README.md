@@ -263,7 +263,7 @@ The full pattern document is available at [`methodology/KNOWLEDGE_GROUNDED_EVALU
 - New-patient fallback paths and RCV-grounded scoring ranges (CLSI EP21)
 - Graph quality hazards discovered through live agent runs
 - Production graph infrastructure and maintenance agent design
-- Comparison with related work (BioinfoMCP, Graph2Eval, PRISM-Physics, AMG-RAG)
+- Comparison with related work (Graph2Eval, PRISM-Physics, AMG-RAG, LAB-KG)
 
 This methodology is validated: the current task achieves consistent F1=1.0 across multiple independent trials on both visible and hidden batches when agents correctly traverse the knowledge graph.
 
