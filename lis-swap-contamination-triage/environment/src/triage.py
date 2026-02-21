@@ -119,7 +119,7 @@ def contamination_score(values: Json, wf: Json,
         k_score = 0.0
         ca_score = 0.0
 
-        if mode == "prior_relative" and patient is not None:
+        if mode == "prior_relative" and patient is not None and "prior" in patient:
             # --- Prior-relative delta check (preferred when history exists) ---
             prior_mean = patient["prior"]["mean"]
             prior_sd = patient["prior"]["sd"]
@@ -134,7 +134,7 @@ def contamination_score(values: Json, wf: Json,
             if ca_delta_max < 0:
                 ca_score = min(max(0.0, ca_zscore / ca_delta_max), 1.5)
 
-        elif mode == "prior_relative" and patient is None:
+        elif mode == "prior_relative" and (patient is None or "prior" not in patient):
             # --- Fallback: no prior available, use absolute population thresholds ---
             k_min = rule.get("fallback_K_min")
             ca_max = rule.get("fallback_Ca_max")
@@ -233,6 +233,10 @@ def compute_swap_scores(specimens: List[Json], patients_idx: Dict[str, Json],
             pi = patients_idx.get(si["patient_id"])
             pj = patients_idx.get(sj["patient_id"])
             if not pi or not pj:
+                continue
+            # Skip swap check if either patient has no prior history — delta check
+            # requires a prior baseline; new patients cannot be evaluated for swaps.
+            if "prior" not in pi or "prior" not in pj:
                 continue
             
             # Original assignment mismatch

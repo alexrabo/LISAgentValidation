@@ -82,29 +82,42 @@ def score(decisions: Dict[str, str], truth: Dict[str, str]) -> Dict[str, float]:
 def check_workflow_was_modified() -> None:
     """Verify agent actually edited workflow.json instead of leaving it broken.
 
-    The original flawed file has three deliberate errors:
-      1. K_min=7.0 in contamination_signatures — too high, no contamination
-         specimen has K >= 7.0, so contamination detection is completely disabled
-         regardless of threshold. Agent must lower K_min to detect EDTA specimens.
-      2. contamination_hold_threshold=0.8 — too high even after fixing K_min
-      3. swap_hold_threshold=0.99 — effectively disables swap detection
+    The original flawed file has these deliberate errors:
+      1. contamination_signatures uses absolute mode (K_min=7.5) — thresholds so
+         high that no contamination specimen triggers a HOLD.
+         Agent must either lower K_min (absolute mode) OR switch to prior_relative
+         mode with K_delta_min derived from the clinical knowledge graph.
+      2. swap_detection.enabled=false — swap detection is completely disabled.
 
-    At least one of these must change for the workflow to produce any HOLDs.
+    A valid repair is either:
+      - Absolute mode: lower K_min below 7.0 (to ~6.0 or below)
+      - Prior-relative mode: set mode='prior_relative' with K_delta_min present
+        (this is the intended approach, guided by /app/clinical_knowledge.json)
     """
     wf = json.loads(Path("/app/workflow.json").read_text(encoding="utf-8"))
-    policy = wf.get("decision_policy", {})
-    cont_thresh = policy.get("contamination_hold_threshold", 0.8)
-    swap_thresh = policy.get("swap_hold_threshold", 0.99)
     sigs = wf.get("contamination_signatures", [{}])
-    k_min = sigs[0].get("rule", {}).get("K_min", 7.0) if sigs else 7.0
+    sig = sigs[0] if sigs else {}
+    rule = sig.get("rule", {})
+    mode = sig.get("mode", "absolute")
 
-    if cont_thresh >= 0.8 and swap_thresh >= 0.99 and k_min >= 7.0:
+    k_min = rule.get("K_min", 7.5)
+    k_delta_min = rule.get("K_delta_min")
+    swap_enabled = wf.get("swap_detection", {}).get("enabled", False)
+
+    # Accept prior_relative mode with K_delta_min as a valid modification
+    is_prior_relative = mode == "prior_relative" and k_delta_min is not None
+    # Accept absolute mode if K_min was meaningfully lowered
+    is_absolute_fixed = mode != "prior_relative" and k_min < 7.0
+    # Accept if swap detection was enabled
+    is_swap_fixed = swap_enabled is True
+
+    if not (is_prior_relative or is_absolute_fixed or is_swap_fixed):
         raise AssertionError(
-            "workflow.json was not modified: all three flaws remain — "
-            f"K_min={k_min} (original=7.0, should be ~5.8), "
-            f"contamination_hold_threshold={cont_thresh} (original=0.8), "
-            f"swap_hold_threshold={swap_thresh} (original=0.99). "
-            "Edit /app/workflow.json to fix the contamination signature and thresholds."
+            "workflow.json was not modified meaningfully. The original has "
+            f"K_min={k_min}, mode='{mode}', swap_detection.enabled={swap_enabled}. "
+            "Fix the contamination signature (switch to prior_relative mode using "
+            "/app/clinical_knowledge.json, or lower K_min below 7.0) and enable "
+            "swap detection."
         )
 
 
@@ -117,7 +130,7 @@ def check_triage_not_modified() -> None:
 
     # SHA-256 of canonical files baked into the image at build time
     EXPECTED_HASHES = {
-        "/usr/local/lib/lis/triage.py": "831054ab17aeff84f2690265056c8fe1bcd5747bfa4d12d078e2733b09b74da1",
+        "/usr/local/lib/lis/triage.py": "45a5d353ebf24dabcf05884747c732cf7ac8f124246d114c7b4a010b9bda9ab4",
         "/app/fixtures/visible_batch_nolabels.json": "660fe4afa3c3b998265e492915e8a8f0e983c38ccbf2522d183600209e5855dc",
     }
 

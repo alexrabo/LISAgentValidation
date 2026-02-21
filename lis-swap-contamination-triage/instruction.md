@@ -36,19 +36,24 @@ The key clinical insight is that **Ca is the discriminating analyte**. Chronic k
 
 ### Selecting thresholds
 
-When the batch includes a patient's prior history (`prior` field), use **prior-relative delta check thresholds** — how many standard deviations the current value deviates from the patient's own baseline. This is the standard laboratory method (delta check), and it is patient-independent:
+A **clinical knowledge graph** is available at `/app/clinical_knowledge.json`. It encodes the published laboratory standards for contamination and swap detection, with source citations for every threshold.
 
-- A standardized K deviation of ≥3 SD above prior mean, combined with a Ca deviation of ≥2.5 SD below prior mean, is the established clinical trigger for EDTA contamination review.
-- A CKD patient with chronically elevated K will show a small delta from their own prior (e.g., +1–2 SD — within their usual variation). A contaminated specimen will show a large delta (e.g., +4–7 SD — an acute jump).
-- Use the `prior` field in the batch file to compute these deviations. Do not fit thresholds to the absolute values of the visible batch specimens.
+**To derive the correct `workflow.json` parameters:**
+1. Read `/app/clinical_knowledge.json`
+2. Follow the `paths.contamination_detection` steps — they map directly to `workflow.json` fields
+3. Use the `nodes.K_acute_rise` and `nodes.Ca_acute_fall` entries for delta-check thresholds
+4. Use `nodes.new_patient_fallback` for patients with no prior history
+5. Follow `paths.swap_detection` to configure the swap detection weights
 
-When a patient has **no prior history** (first encounter — the `patients` list will contain their entry but with no `prior` key, or no entry at all), fall back to absolute population thresholds:
+When the batch includes a patient's prior history (`prior` field), the correct approach is **prior-relative delta check thresholds** — how many standard deviations the current value deviates from the patient's own baseline. The knowledge graph nodes record the published SD thresholds with their CLSI source clause.
 
-- K ≥ 6.5 mmol/L AND Ca ≤ 7.2 mg/dL (≈1.80 mmol/L) is the established population-level EDTA contamination alert.
+When a patient has **no prior history** (first encounter — the `patients` list will contain their entry but with no `prior` key, or no entry at all), fall back to the absolute population thresholds recorded in `nodes.new_patient_fallback` and `nodes.K_acute_rise.fallback_absolute_mmol`.
+
+Do **not** fit thresholds to the absolute values of the visible batch specimens — derive them from the graph. The graph's margins are set by published clinical science, not by this batch's data.
 
 ### Swap detection
 
-A specimen identity swap means two specimens were assigned to the wrong patients. The delta check approach compares how well the current results fit the assigned patient's prior history vs. a hypothetical swapped assignment. A clear improvement under the swap hypothesis — across multiple analytes, with Glucose often being the strongest discriminator due to its large inter-patient variability — indicates a likely mislabeling.
+A specimen identity swap means two specimens were assigned to the wrong patients. The delta check approach compares how well the current results fit the assigned patient's prior history vs. a hypothetical swapped assignment. The knowledge graph `nodes.specimen_swap` entry records which analyte is the strongest discriminator and the recommended weight rationale.
 
 ### HOLD/RELEASE summary
 
