@@ -1,0 +1,181 @@
+{
+  "graph_version": "CLSI_EP33_2023_v1",
+  "domain": "clinical_laboratory_informatics",
+  "scope": "specimen_identity_and_contamination",
+  "nodes": {
+    "EDTA_contamination": {
+      "description": "EDTA anticoagulant from a purple-top CBC tube contaminating a chemistry specimen",
+      "mechanism": ["K_RBC_lysis", "Ca_chelation"],
+      "pattern": "K_acute_rise AND Ca_acute_fall simultaneously",
+      "onset": "acute_artifact",
+      "distinguishes_from": ["CKD_hyperkalemia", "hyperparathyroidism"],
+      "discriminating_analyte": "Ca",
+      "rationale": "CKD cannot suppress Ca below the physiological floor; EDTA routinely does"
+    },
+    "K_acute_rise": {
+      "description": "Acute potassium elevation caused by EDTA lysing red blood cell K",
+      "cause": "EDTA_lyses_RBC_K",
+      "onset": "acute",
+      "detection_method": "delta_check_above_prior",
+      "threshold_SD": 3.0,
+      "threshold_direction": "above",
+      "source": "CLSI_EP33",
+      "source_clause": "Section 4.3, Table 2: recommended delta check divisor for K, acute artifact detection",
+      "fallback_absolute_mmol": 6.5,
+      "fallback_direction": "above",
+      "fallback_source": "Cornes_2008",
+      "fallback_rationale": "Population-level EDTA contamination alert when no patient prior is available"
+    },
+    "Ca_acute_fall": {
+      "description": "Acute calcium depression caused by EDTA chelating ionized calcium",
+      "cause": "EDTA_chelates_ionized_Ca",
+      "onset": "acute",
+      "detection_method": "delta_check_below_prior",
+      "threshold_SD": -2.5,
+      "threshold_direction": "below",
+      "source": "CLSI_EP33",
+      "source_clause": "Section 4.3, Table 2: recommended delta check divisor for Ca, acute artifact detection",
+      "fallback_absolute_mgdl": 7.2,
+      "fallback_units": "mg/dL — use this value for fallback_Ca_max in workflow.json",
+      "fallback_range_mgdl": 0.5,
+      "fallback_range_basis": "≈1×RCV(Ca) at threshold — CLSI EP21; Ca below 6.7 mg/dL is analytically significant contamination",
+      "floor_direction": "below",
+      "floor_source": "Cornes_2008",
+      "floor_rationale": "EDTA chelation floor below which chronic disease (CKD, hyperparathyroidism) cannot push Ca"
+    },
+    "CKD_hyperkalemia": {
+      "description": "Chronically elevated potassium in chronic kidney disease patients",
+      "mechanism": "impaired_renal_K_excretion",
+      "K_pattern": "chronically_elevated_stable",
+      "K_typical_range_mmol": [5.5, 6.5],
+      "Ca_pattern": "preserved_above_physiological_floor",
+      "Ca_defense_mechanism": "secondary_hyperparathyroidism",
+      "Ca_physiological_floor_note": "CKD Ca stays above EDTA chelation floor — Ca is the discriminating analyte (see Ca_acute_fall.fallback_absolute_mgdl)",
+      "K_delta_from_prior_SD": "small — typically 0.5 to 2.0 SD within chronic variation",
+      "Ca_delta_from_prior_SD": "near zero — stable chronic disease",
+      "decision": "RELEASE",
+      "rationale": "K delta from own prior is small (chronic, not acute); Ca is preserved — do NOT use CKD node values as workflow.json thresholds"
+    },
+    "delta_check_standard": {
+      "description": "Standardized difference between current and prior result, normalized by patient's own SD",
+      "formula": "(current_value - prior_mean) / prior_SD",
+      "purpose": "patient-independent anomaly detection — personalizes to individual baseline",
+      "standard": "CLSI_EP33",
+      "standard_full": "CLSI EP33: Protocols for the Validation of Equivalent Methods",
+      "typical_alert_threshold": 3.0,
+      "units": "standard_deviations",
+      "advantage_over_absolute": "A CKD patient with K=6.1 shows +1.5 SD from their own prior; a contaminated specimen shows +5 SD — the same absolute value has very different clinical meaning"
+    },
+    "specimen_swap": {
+      "description": "Two specimens assigned to wrong patients (mislabeling)",
+      "detection_method": "pairwise_delta_check_comparison",
+      "algorithm": "compare mismatch_score(specimen, assigned_patient) vs mismatch_score(specimen, candidate_patient)",
+      "discriminating_analytes": ["Glucose"],
+      "glucose_rationale": "Glucose has high inter-patient variability and low intra-patient variability — strong discriminator for identity verification",
+      "glucose_recommended_weight": 3.0,
+      "other_analytes_weight": 1.0,
+      "decision_rule": "IF swapped mismatch score substantially lower than original → HOLD both specimens"
+    },
+    "decision_policy": {
+      "description": "Thresholds that translate triage scores into HOLD/RELEASE decisions — set these in workflow.json decision_policy",
+      "contamination_hold_threshold": 0.5,
+      "contamination_hold_threshold_note": "Score of 1.0 means both K and Ca are exactly at their delta thresholds; 0.5 means half that — catches clear signals while releasing borderline cases",
+      "swap_hold_threshold": 0.3,
+      "swap_hold_threshold_note": "Improvement scores are bounded strictly below 1.0 (swapped mismatch is always > 0). A threshold of 1.0 is unreachable and disables swap detection. Use 0.3 to catch clear swaps (improvement ~0.97 for true swaps, ~0.02 for noise).",
+      "swap_hold_threshold_valid_range": "must be > 0.0 and < 1.0",
+      "source": "Calibrated against CLSI EP33 specimen identity verification sensitivity targets"
+    },
+    "new_patient_fallback": {
+      "description": "Policy for patients with no prior history in the batch",
+      "trigger": "patient entry has no 'prior' key, or patient not found in patients list",
+      "strategy": "absolute_population_thresholds",
+      "K_threshold_mmol": 6.5,
+      "K_threshold_source": "Cornes_2008",
+      "Ca_threshold_mgdl": 7.2,
+      "Ca_threshold_units": "mg/dL — Ca values in the batch are in mg/dL",
+      "Ca_threshold_source": "Cornes_2008",
+      "rationale": "Population-level thresholds are more conservative than prior-relative; acceptable specificity when individual baseline is unknown"
+    }
+  },
+  "paths": {
+    "contamination_detection": {
+      "description": "Derive workflow.json contamination_signatures parameters from this path",
+      "hold_threshold": 0.5,
+      "hold_threshold_note": "score of 1.0 means both analytes exactly at their delta thresholds; 0.5 catches clear contamination signals",
+      "steps": [
+        "1. For each specimen, compute K_delta = (K_val - patient.prior.mean.K) / patient.prior.sd.K",
+        "2. Compute Ca_delta = (Ca_val - patient.prior.mean.Ca) / patient.prior.sd.Ca",
+        "3. IF K_delta > nodes.K_acute_rise.threshold_SD AND Ca_delta < nodes.Ca_acute_fall.threshold_SD → CONTAMINATION signal",
+        "4. IF no prior → use nodes.K_acute_rise.fallback_absolute_mmol and nodes.Ca_acute_fall.fallback_absolute_mgdl",
+        "5. Set workflow.json: mode='prior_relative', K_delta_min=nodes.K_acute_rise.threshold_SD, Ca_delta_max=nodes.Ca_acute_fall.threshold_SD",
+        "6. Set workflow.json: fallback_K_min=nodes.K_acute_rise.fallback_absolute_mmol, fallback_Ca_max=nodes.Ca_acute_fall.fallback_absolute_mgdl",
+        "7. Set decision_policy thresholds from nodes.decision_policy — contamination_hold_threshold=0.5, swap_hold_threshold=0.3. WARNING: do NOT default these to 1.0; swap_hold_threshold=1.0 is mathematically unreachable and disables swap detection entirely",
+        "8. Use python_extract block below for exact Python expressions to read every required value"
+      ],
+      "python_extract": {
+        "description": "Exact Python expressions to read each value from this file (kg = json.load(open('/app/clinical_knowledge.json')))",
+        "K_delta_min":                     "kg['nodes']['K_acute_rise']['threshold_SD']",
+        "Ca_delta_max":                    "kg['nodes']['Ca_acute_fall']['threshold_SD']",
+        "fallback_K_min":                  "kg['nodes']['K_acute_rise']['fallback_absolute_mmol']",
+        "fallback_Ca_max":                 "kg['nodes']['Ca_acute_fall']['fallback_absolute_mgdl']",
+        "fallback_K_range":                1.0,
+        "fallback_K_range_basis":          "≈1×RCV(K) at 6.5 mmol/L threshold (K CVi≈6.4%, CVa≈2.0%, z=1.96; CLSI EP21) — K below (threshold - range) is analytically significant",
+        "fallback_Ca_range":               0.5,
+        "fallback_Ca_range_basis":         "≈1×RCV(Ca) at 7.2 mg/dL threshold (Ca CVi≈1.9%, CVa≈1.5%, z=1.96; CLSI EP21) — Ca below (threshold - range) is analytically significant",
+        "contamination_hold_threshold":    "kg['nodes']['decision_policy']['contamination_hold_threshold']",
+        "swap_hold_threshold":             "kg['nodes']['decision_policy']['swap_hold_threshold']",
+        "swap_enabled":                    true,
+        "swap_pairwise":                   true,
+        "Glucose_weight":                  "kg['nodes']['specimen_swap']['glucose_recommended_weight']",
+        "other_analyte_weight":            "kg['nodes']['specimen_swap']['other_analytes_weight']"
+      },
+      "workflow_json_mapping": {
+        "contamination_signatures[0].mode": "prior_relative",
+        "contamination_signatures[0].rule.K_delta_min": "nodes.K_acute_rise.threshold_SD",
+        "contamination_signatures[0].rule.Ca_delta_max": "nodes.Ca_acute_fall.threshold_SD",
+        "contamination_signatures[0].rule.fallback_K_min": "nodes.K_acute_rise.fallback_absolute_mmol",
+        "contamination_signatures[0].rule.fallback_Ca_max": "nodes.Ca_acute_fall.fallback_absolute_mgdl",
+        "contamination_signatures[0].rule.fallback_K_range": 1.0,
+        "contamination_signatures[0].rule.fallback_Ca_range": 0.5,
+        "decision_policy.contamination_hold_threshold": "nodes.decision_policy.contamination_hold_threshold",
+        "decision_policy.swap_hold_threshold": "nodes.decision_policy.swap_hold_threshold",
+        "IMPORTANT": "swap_hold_threshold must be < 1.0 — see nodes.decision_policy.swap_hold_threshold_note",
+        "note_units": "Ca values in the batch are in mg/dL — use fallback_absolute_mgdl (7.2), not mmol/L"
+      }
+    },
+    "CKD_vs_contamination_differential": {
+      "description": "How to distinguish CKD hyperkalemia from EDTA contamination",
+      "steps": [
+        "IF K elevated AND K_delta_from_prior < 2.0 SD AND Ca near prior → CKD, RELEASE",
+        "IF K elevated AND K_delta_from_prior > nodes.K_acute_rise.threshold_SD AND Ca_delta < nodes.Ca_acute_fall.threshold_SD → EDTA, HOLD",
+        "Key: Ca is the discriminating analyte — CKD cannot push Ca below the EDTA chelation floor (nodes.Ca_acute_fall.fallback_absolute_mgdl = 7.2 mg/dL)"
+      ]
+    },
+    "swap_detection": {
+      "description": "Derive workflow.json swap_detection parameters from this path",
+      "hold_threshold": 0.3,
+      "hold_threshold_note": "swap improvement scores are bounded strictly below 1.0 — any threshold >= 1.0 disables swap detection entirely",
+      "steps": [
+        "1. Enable pairwise comparison: swap_detection.enabled=true, pairwise=true",
+        "2. Set Glucose weight = nodes.specimen_swap.glucose_recommended_weight (strongest discriminator)",
+        "3. Set all other analyte weights = nodes.specimen_swap.other_analytes_weight",
+        "4. Set decision_policy.swap_hold_threshold = paths.swap_detection.hold_threshold = 0.3 (MUST be < 1.0)"
+      ],
+      "workflow_json_mapping": {
+        "swap_detection.enabled": true,
+        "swap_detection.pairwise": true,
+        "swap_detection.analyte_weights.K": "nodes.specimen_swap.other_analytes_weight",
+        "swap_detection.analyte_weights.Ca": "nodes.specimen_swap.other_analytes_weight",
+        "swap_detection.analyte_weights.Na": "nodes.specimen_swap.other_analytes_weight",
+        "swap_detection.analyte_weights.Cl": "nodes.specimen_swap.other_analytes_weight",
+        "swap_detection.analyte_weights.HCO3": "nodes.specimen_swap.other_analytes_weight",
+        "swap_detection.analyte_weights.Glucose": "nodes.specimen_swap.glucose_recommended_weight"
+      }
+    }
+  },
+  "references": {
+    "CLSI_EP33": "Clinical and Laboratory Standards Institute. EP33: Protocols for the Validation of Equivalent Methods. 2023.",
+    "Cornes_2008": "Cornes MP et al. Spurious results due to EDTA contamination: an underappreciated problem? Ann Clin Biochem. 2008;45(Pt 3):303-306.",
+    "KDIGO_2020": "KDIGO 2020 Clinical Practice Guideline for Diabetes Management in Chronic Kidney Disease. Kidney Int. 2020;98(4S):S1-S115."
+  }
+}
