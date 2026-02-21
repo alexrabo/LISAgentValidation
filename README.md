@@ -151,6 +151,7 @@ lis-swap-contamination-triage/     # Terminal Bench task
 ├── instruction.md                 # Agent task instructions
 └── task.toml                       # Terminal Bench metadata
 
+methodology/                       # Benchmark design methodology
 task/                              # Task definitions
 documentation/                     # Terminal Bench guides
 landing-page/                      # Project website
@@ -245,7 +246,7 @@ This approach aligns with modern agent evaluation frameworks (Harbor, Anthropic 
 
 ## Upcoming Work
 
-A formal methodology document describing the benchmark design principles behind this task — including how to prevent agents from passing by data-fitting rather than applying domain knowledge — is in preparation.
+A methodology document describing the benchmark design principles behind this task is available at [`methodology/KNOWLEDGE_GROUNDED_EVALUATION_PATTERN.md`](methodology/KNOWLEDGE_GROUNDED_EVALUATION_PATTERN.md). It covers how knowledge graphs prevent data-fitting, why thresholds derived from published standards produce structurally wider decision margins than any fitting approach, and the path toward a live MCP-served knowledge service for production deployments.
 
 ---
 
