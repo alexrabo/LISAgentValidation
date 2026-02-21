@@ -151,7 +151,7 @@ lis-swap-contamination-triage/     # Terminal Bench task
 ├── instruction.md                 # Agent task instructions
 └── task.toml                       # Terminal Bench metadata
 
-
+methodology/                       # Benchmark design patterns (see Upcoming Work)
 task/                              # Task definitions
 documentation/                     # Terminal Bench guides
 landing-page/                      # Project website
@@ -241,6 +241,31 @@ Terminal Bench provides:
 - **Safety constraints** — Hard requirements (zero unsafe releases)
 
 This approach aligns with modern agent evaluation frameworks (Harbor, Anthropic agent evals) while addressing regulated industry requirements.
+
+---
+
+## Upcoming Work
+
+### Knowledge-Grounded Evaluation Pattern
+
+The LIS Swap & Contamination Triage task was designed using a methodology we are formalizing as the **Knowledge-Grounded Evaluation** pattern.
+
+The core problem this pattern addresses: agents can pass benchmark tasks by fitting visible test data rather than applying domain knowledge. In trajectory analysis of early runs, GPT-5 passed by setting threshold parameters to within 0.05 units of visible specimen values — not by applying published CLSI delta check standards. The passing solution was formally incorrect by any clinical audit standard, even though it produced the right HOLD/RELEASE decisions on that specific batch.
+
+The pattern's solution: ship a **static causal knowledge graph** (`clinical_knowledge.json`) encoding authoritative domain standards alongside the task. Agents must traverse graph paths to derive parameters. The margin between correct and incorrect decisions is then set by the underlying clinical science — not by how close the task designer set the test cases.
+
+> *When parameters come from a domain causal graph, the margin between correct and incorrect decisions is determined by the underlying biology, not by task design choices.*
+
+The full pattern document is available at [`methodology/KNOWLEDGE_GROUNDED_EVALUATION_PATTERN.md`](methodology/KNOWLEDGE_GROUNDED_EVALUATION_PATTERN.md). It covers:
+- The data-fitting problem and why standard pass/fail metrics cannot detect it
+- Static knowledge graph design (nodes, paths, source citations)
+- The two-layer architecture: clinical content vs. agent interface engineering
+- New-patient fallback paths and RCV-grounded scoring ranges (CLSI EP21)
+- Graph quality hazards discovered through live agent runs
+- Production graph infrastructure and maintenance agent design
+- Comparison with related work (BioinfoMCP, Graph2Eval, PRISM-Physics, AMG-RAG)
+
+This methodology is validated: the current task achieves consistent F1=1.0 across multiple independent trials on both visible and hidden batches when agents correctly traverse the knowledge graph.
 
 ---
 
