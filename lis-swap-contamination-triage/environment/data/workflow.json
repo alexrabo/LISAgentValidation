@@ -4,7 +4,7 @@
   "analytes": ["K", "Ca", "Na", "Cl", "HCO3", "Glucose"],
   "delta_check_threshold": 3.0,
   "swap_detection": {
-    "enabled": true,
+    "enabled": false,
     "pairwise": true,
     "analyte_weights": {
       "K": 1.0,
@@ -17,10 +17,10 @@
   },
   "contamination_signatures": [
     {
-      "name": "EDTA_like",
+      "name": "EDTA_absolute",
       "rule": {
-        "K_min": 7.0,
-        "Ca_max": 8.2,
+        "K_min": 7.5,
+        "Ca_max": 6.0,
         "K_range": 1.0,
         "Ca_range": 1.0
       },
@@ -28,7 +28,7 @@
     }
   ],
   "decision_policy": {
-    "contamination_hold_threshold": 0.8,
-    "swap_hold_threshold": 0.99
+    "contamination_hold_threshold": 0.5,
+    "swap_hold_threshold": 0.5
   }
 }

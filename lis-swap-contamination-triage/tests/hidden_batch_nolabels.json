@@ -2,6 +2,10 @@
   "batch_id": "BATCH-HID-002",
   "patients": [
     {
+      "patient_id": "P013",
+      "note": "NEW PATIENT — no prior history available. First encounter."
+    },
+    {
       "patient_id": "P012",
       "prior": {
         "mean": {"K": 5.5, "Ca": 7.9, "Na": 137, "Cl": 100, "HCO3": 21, "Glucose": 98},
@@ -55,6 +59,7 @@
     {"specimen_id": "S207", "patient_id": "P007", "values": {"K": 6.3,  "Ca": 7.7,  "Na": 137.1, "Cl": 100.3, "HCO3": 21.2, "Glucose": 114}},
     {"specimen_id": "S208", "patient_id": "P008", "values": {"K": 3.79, "Ca": 9.71, "Na": 140.9, "Cl": 104.9, "HCO3": 26.2, "Glucose": 84}},
     {"specimen_id": "S209", "patient_id": "P010", "values": {"K": 4.58, "Ca": 9.03, "Na": 137.9, "Cl": 100.8, "HCO3": 21.8, "Glucose": 122}},
-    {"specimen_id": "S210", "patient_id": "P012", "values": {"K": 6.12, "Ca": 7.93, "Na": 137.2, "Cl": 100.3, "HCO3": 21.2, "Glucose": 97}}
+    {"specimen_id": "S210", "patient_id": "P012", "values": {"K": 6.12, "Ca": 7.93, "Na": 137.2, "Cl": 100.3, "HCO3": 21.2, "Glucose": 97}},
+    {"specimen_id": "S211", "patient_id": "P013", "values": {"K": 7.8,  "Ca": 6.5,  "Na": 136.5, "Cl": 99.8,  "HCO3": 20.9, "Glucose": 102}}
   ]
 }

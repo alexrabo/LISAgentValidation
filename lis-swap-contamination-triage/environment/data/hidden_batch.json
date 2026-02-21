@@ -2,6 +2,10 @@
   "batch_id": "BATCH-HID-002",
   "patients": [
     {
+      "patient_id": "P013",
+      "note": "NEW PATIENT — no prior history available. First encounter."
+    },
+    {
       "patient_id": "P012",
       "prior": {
         "mean": {"K": 5.5, "Ca": 7.9, "Na": 137, "Cl": 100, "HCO3": 21, "Glucose": 98},
@@ -110,6 +114,12 @@
       "patient_id": "P012",
       "values": {"K": 6.12, "Ca": 7.93, "Na": 137.2, "Cl": 100.3, "HCO3": 21.2, "Glucose": 97},
       "truth": {"label": "NORMAL"}
+    },
+    {
+      "specimen_id": "S211",
+      "patient_id": "P013",
+      "values": {"K": 7.8, "Ca": 6.5, "Na": 136.5, "Cl": 99.8, "HCO3": 20.9, "Glucose": 102},
+      "truth": {"label": "CONTAMINATION", "type": "EDTA_like"}
     }
   ]
 }
