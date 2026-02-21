@@ -9,7 +9,7 @@ cat > /app/workflow.json << 'EOF'
   "version": "0.2",
   "objective": "Flag specimens likely contaminated or swapped; hold for review.",
   "analytes": ["K", "Ca", "Na", "Cl", "HCO3", "Glucose"],
-  "zscore_threshold": 2.0,
+  "delta_check_threshold": 2.0,
   "swap_detection": {
     "enabled": true,
     "pairwise": true,
@@ -35,7 +35,7 @@ cat > /app/workflow.json << 'EOF'
     }
   ],
   "decision_policy": {
-    "contamination_hold_threshold": 0.5,
+    "contamination_hold_threshold": 0.35,
     "swap_hold_threshold": 0.25
   }
 }
