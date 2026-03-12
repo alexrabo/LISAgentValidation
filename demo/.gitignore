@@ -1,0 +1,9 @@
+.env
+data/
+*.db
+config/clinical_knowledge.json
+agent/task_prompt_filled.md
+agent/workflow.json
+__pycache__/
+*.pyc
+.venv/

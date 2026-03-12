@@ -1,0 +1,19 @@
+{
+  "graph_version": "CLSI_EP33_2023_v1",
+  "map_id": "contamination_swap_map",
+  "_note": "Sample structure only — values are illustrative placeholders, not authoritative. Set KG_JSON_B64 with the real knowledge graph at runtime.",
+  "nodes": {
+    "K_acute_rise": {
+      "threshold_SD": 0.0,
+      "source": "CLSI_EP33"
+    },
+    "Ca_acute_fall": {
+      "threshold_SD": 0.0,
+      "source": "CLSI_EP33"
+    },
+    "decision_policy": {
+      "contamination_hold_threshold": 0.0,
+      "swap_hold_threshold": 0.0
+    }
+  }
+}

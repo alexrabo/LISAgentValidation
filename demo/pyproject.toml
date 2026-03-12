@@ -1,0 +1,52 @@
+[project]
+name = "lis-mcp-validation-demo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.135.1",
+    "lis-triage-engine",
+    "mcp[cli]>=1.26.0",
+    "uvicorn[standard]>=0.41.0",
+]
+
+[tool.uv.sources]
+# Local dev: wheel copied into demo/wheels/ for self-containment (Task 08)
+# Production/Docker: wheel installed from wheels/ dir — no monorepo path needed
+lis-triage-engine = { path = "wheels/lis_triage_engine-1.0.0-py3-none-any.whl" }
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.5",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.uv.scripts]
+dev     = "uvicorn server.lims_server:app --port 8000 --reload"
+test    = "pytest tests/ -v"
+lint    = "ruff check server/ harness/ tests/"
+fmt     = "ruff format server/ harness/ tests/"
+seed    = "python harness/run_validation.py --phase seed --session-id dev-run-1"
+eval    = "python harness/run_validation.py --phase evaluate --session-id dev-run-1 --workflow agent/workflow.json --out validation_report.md"
+build   = "docker-compose build"
+up      = "docker-compose up -d"
+down    = "docker-compose down"

@@ -1,0 +1,5 @@
+fastapi==0.135.1
+uvicorn[standard]==0.41.0
+mcp[cli]==1.26.0
+pydantic-settings==2.13.1
+# lis-triage-engine installed from local wheel — see Dockerfile COPY step

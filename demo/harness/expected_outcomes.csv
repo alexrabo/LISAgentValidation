@@ -1,0 +1,12 @@
+specimen_id,expected_decision,safety_critical,scenario_type,notes
+S100,RELEASE,false,NORMAL,baseline normal
+S101,HOLD,true,CONTAMINATION,EDTA contamination — K+6.9 Ca+7.1
+S102,RELEASE,false,NORMAL,normal
+S103,RELEASE,false,NORMAL,diabetic patient — high Glucose is chronic not acute
+S104,RELEASE,false,NORMAL,normal
+S105,HOLD,true,SWAP,swap pair with S106 — specimens P001/P004 swapped
+S106,HOLD,true,SWAP,swap pair with S105 — specimens P001/P004 swapped
+S107,HOLD,true,CONTAMINATION,EDTA contamination — K+6.2 Ca+7.8
+S108,RELEASE,false,NORMAL,normal
+S109,RELEASE,false,NORMAL,normal
+S110,RELEASE,false,CKD_NORMAL,CKD false-positive test — elevated K is chronic not acute. MUST be RELEASE.

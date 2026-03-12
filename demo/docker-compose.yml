@@ -1,0 +1,17 @@
+services:
+  lims-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data        # lims.db persists here — no KG in this volume
+    env_file:
+      - .env                    # KG_JSON_B64 and DB_PATH live here — never committed
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
