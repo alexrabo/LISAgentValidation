@@ -1,0 +1,73 @@
+name: Deploy Streamlit to Cloud Run
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "demo/ui/**"
+      - ".github/workflows/deploy.yml"
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  SERVICE: lis-demo-ui
+  IMAGE: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/lis-demo/lis-demo-ui
+
+jobs:
+  deploy:
+    name: Build & deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for Workload Identity Federation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest \
+            demo/ui/
+
+      - name: Push image
+        run: |
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.IMAGE }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image=${{ env.IMAGE }}:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }} \
+            --set-env-vars="GCS_BUCKET=${{ secrets.GCS_BUCKET }},GCS_RECORDING_OBJECT=recording.cast" \
+            --allow-unauthenticated \
+            --min-instances=0 \
+            --max-instances=3 \
+            --memory=512Mi \
+            --cpu=1 \
+            --timeout=60 \
+            --project=${{ env.PROJECT_ID }}
+
+      - name: Print service URL
+        run: |
+          gcloud run services describe ${{ env.SERVICE }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format="value(status.url)"
