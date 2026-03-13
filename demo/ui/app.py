@@ -116,25 +116,41 @@ def load_decisions() -> list[dict]:
 
 @st.cache_data(ttl=300)
 def get_cast_markers(cast_content: str) -> dict:
-    """Compute 13 evenly-spaced artificial markers from cast duration."""
+    """Find real timestamps for 8 recording segments by searching cast output."""
     import json as _json
     lines = cast_content.strip().split('\n')
-    duration = None
-    try:
-        duration = _json.loads(lines[0]).get('duration')
-    except Exception:
-        pass
-    if not duration:
-        for line in reversed(lines[1:]):
-            try:
-                duration = float(_json.loads(line)[0])
-                break
-            except Exception:
+
+    # Search patterns in the order they appear in the recording
+    PATTERNS = [
+        "ls -la",                       # 1 — environment exploration
+        "specimen_swap",                # 2 — KG swap paths
+        "glucose_recommended_weight",   # 3 — KG analyte weights
+        "hold_threshold",               # 4 — KG thresholds
+        "workflow.json",                # 5 — first workflow write
+        "/app/triage",                  # 6 — triage run
+        "decisions.json",               # 7 — review / final
+    ]
+
+    markers = {"0": 0.0}   # segment 0 always starts at t=0
+    next_pat = 0
+    accum = ""
+
+    for line in lines[1:]:
+        if next_pat >= len(PATTERNS):
+            break
+        try:
+            t, etype, data = _json.loads(line)
+            if etype != "o":
                 continue
-    if not duration or duration <= 0:
-        return {}
-    slot = duration / 13
-    return {str(i): round(i * slot, 2) for i in range(13)}
+            accum += data
+            if PATTERNS[next_pat] in accum:
+                markers[str(next_pat + 1)] = round(t, 2)
+                accum = ""
+                next_pat += 1
+        except Exception:
+            continue
+
+    return markers
 
 
 @st.cache_data(ttl=300)
@@ -545,160 +561,63 @@ with tab_scatter:
 # TAB 3 — Agent Replay
 # ===========================================================================
 REPLAY_STEPS = [
+    # ── RULE DERIVATION ──────────────────────────────────────────────
     {
-        "tool": "query_knowledge",
-        "specimen": None,
-        "phase": "standards",
-        "decision": None,
-        "scores": None,
-        "result": "CLSI EP33 graph retrieved",
-        "detail": (
-            "The agent reads the rules before touching any specimen. "
-            "The server enforces this: <code>apply_autoverification</code> returns an error until "
-            "<code>query_knowledge</code> has been called. The agent cannot skip the standards-reading step."
-        ),
+        "group": "rule_derivation",
+        "title": "Session setup",
+        "command": "clear",
+        "detail": "Agent session starts inside the Docker container. The triage engine, specimen fixtures, and clinical knowledge graph are pre-loaded at /app.",
         "flag": None,
     },
     {
-        "tool": "apply_autoverification",
-        "specimen": "S100",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.000  ·  swap 0.021",
-        "result": None,
-        "detail": "Values within patient-relative delta-check range. No contamination or swap signature.",
+        "group": "rule_derivation",
+        "title": "Environment exploration",
+        "command": "ls -la /app",
+        "detail": "Agent inventories available files: clinical_knowledge.json (CLSI EP33 graph), visible_batch_nolabels.json (11 specimens), workflow.json (default config). Reads the task objective.",
         "flag": None,
     },
     {
-        "tool": "apply_autoverification",
-        "specimen": "S101",
-        "phase": "triage",
-        "decision": "HOLD",
-        "scores": "contamination 1.500  ·  swap 0.000",
-        "result": None,
-        "detail": (
-            "EDTA contamination. K elevated 1.5 SD above patient's own prior; "
-            "Ca depressed simultaneously. Classic purple-top tube signature."
-        ),
-        "flag": "hold",
-    },
-    {
-        "tool": "apply_autoverification",
-        "specimen": "S102",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.030  ·  swap 0.000",
-        "result": None,
-        "detail": "Trace contamination score well below threshold. Released.",
+        "group": "rule_derivation",
+        "title": "KG — swap detection paths",
+        "command": 'grep "specimen_swap" clinical_knowledge.json',
+        "detail": "Agent queries the knowledge graph for swap detection parameters: pairwise comparison algorithm, discriminating analytes, and the role of Glucose as the strongest identity discriminator.",
         "flag": None,
     },
     {
-        "tool": "apply_autoverification",
-        "specimen": "S103",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.000  ·  swap 0.030",
-        "result": None,
-        "detail": "Low swap score — patient assignment is the better fit. Released.",
+        "group": "rule_derivation",
+        "title": "KG — analyte weights",
+        "command": 'grep "glucose_recommended_weight"',
+        "detail": "Agent extracts the CLSI EP33-specified weight for Glucose in swap scoring. High inter-patient, low intra-patient variability makes it the strongest discriminator for identity verification.",
         "flag": None,
     },
     {
-        "tool": "apply_autoverification",
-        "specimen": "S104",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.021  ·  swap 0.000",
-        "result": None,
-        "detail": "Both scores near zero. Released.",
+        "group": "rule_derivation",
+        "title": "KG — hold/release thresholds",
+        "command": 'grep "hold_threshold"',
+        "detail": "Agent reads contamination_hold_threshold and swap_hold_threshold from the decision_policy node. These values come from the published standard — not fitted to the visible specimens.",
         "flag": None,
     },
     {
-        "tool": "apply_autoverification",
-        "specimen": "S105",
-        "phase": "triage",
-        "decision": "HOLD",
-        "scores": "contamination 0.335  ·  swap 0.970",
-        "result": None,
-        "detail": (
-            "Identity swap — swap pair with S106. "
-            "Swapping their patient assignments reduces mismatch score by 0.97 SD. "
-            "Both specimens held pending re-labelling."
-        ),
-        "flag": "hold",
-    },
-    {
-        "tool": "apply_autoverification",
-        "specimen": "S106",
-        "phase": "triage",
-        "decision": "HOLD",
-        "scores": "contamination 0.000  ·  swap 0.970",
-        "result": None,
-        "detail": (
-            "Identity swap — swap pair with S105. "
-            "No contamination signature; the hold is driven entirely by pairwise swap evidence."
-        ),
-        "flag": "hold",
-    },
-    {
-        "tool": "apply_autoverification",
-        "specimen": "S107",
-        "phase": "triage",
-        "decision": "HOLD",
-        "scores": "contamination 1.414  ·  swap 0.000",
-        "result": None,
-        "detail": (
-            "EDTA contamination. K and Ca both deviate from patient prior by 1.41 SD. "
-            "No swap component — the tube contents are wrong, not the label."
-        ),
-        "flag": "hold",
-    },
-    {
-        "tool": "apply_autoverification",
-        "specimen": "S108",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.000  ·  swap 0.000",
-        "result": None,
-        "detail": "Both scores zero. Released.",
+        "group": "rule_derivation",
+        "title": "Writes workflow.json",
+        "command": "cat > /app/workflow.json",
+        "detail": "Agent writes the triage configuration using values derived from the knowledge graph: delta_check_threshold, contamination signatures with fallback rules, swap analyte weights, and decision thresholds. No hardcoded values.",
         "flag": None,
     },
+    # ── DECISIONS REACHED ────────────────────────────────────────────
     {
-        "tool": "apply_autoverification",
-        "specimen": "S109",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.000  ·  swap 0.000",
-        "result": None,
-        "detail": "Both scores zero. Released.",
-        "flag": None,
+        "group": "decisions",
+        "title": "Runs triage — all 11 specimens",
+        "command": "/app/triage --batch visible_batch_nolabels.json",
+        "detail": "Triage engine processes S100–S110 in one pass using the KG-derived workflow. S101, S107 → HOLD (EDTA contamination). S105, S106 → HOLD (identity swap pair). S100, S102–S104, S108–S110 → RELEASE. S110 (CKD) correctly released despite elevated K.",
+        "flag": "decisions",
     },
     {
-        "tool": "apply_autoverification",
-        "specimen": "S110",
-        "phase": "triage",
-        "decision": "RELEASE",
-        "scores": "contamination 0.000  ·  swap 0.000",
-        "result": None,
-        "detail": (
-            "CKD patient — chronically elevated K (6.10 mmol/L). "
-            "An absolute-threshold agent would flag this as contamination. "
-            "The patient-relative delta check finds K stable within his own baseline. "
-            "Correctly released."
-        ),
-        "flag": "ckd",
-    },
-    {
-        "tool": "get_audit_log",
-        "specimen": None,
-        "phase": "audit",
-        "decision": None,
-        "scores": None,
-        "result": "ALCOA+ audit trail verified — 13 events",
-        "detail": (
-            "Append-only log confirmed: every tool call timestamped, attributed to session ID, "
-            "specimen values write-once. Provides the CAP/CLIA documentation trail."
-        ),
-        "flag": None,
+        "group": "decisions",
+        "title": "Reviews results and finalises",
+        "command": "cat decisions.json / final workflow",
+        "detail": "Agent inspects triage output, confirms HOLDs are clinically justified, refines the workflow configuration, and produces the final decisions.json. Evaluation: F1 1.00, unsafe releases 0.",
+        "flag": "decisions",
     },
 ]
 
@@ -722,56 +641,48 @@ with tab_replay:
         # ------------------------------------------------------------------
         # Build narration panel HTML (inline styles — lives inside iframe)
         # ------------------------------------------------------------------
-        PHASE_META = {
-            "standards": ("📖", "Phase 1 — Standards retrieval", "#3B82F6"),
-            "triage":    ("🧪", "Phase 2 — Specimen triage",     "#6B7280"),
-            "audit":     ("📋", "Phase 3 — Audit verification",  "#F97316"),
+        GROUP_HEADERS = {
+            "rule_derivation": ("📐", "Rule Derivation", "#3B82F6", "#EFF6FF"),
+            "decisions":       ("✅", "Decisions Reached", "#16A34A", "#F0FDF4"),
         }
-        BORDER = {"hold": "#EF4444", "ckd": "#8B5CF6", "": ""}
 
         cards_html = []
-        current_phase = None
+        current_group = None
         for idx, step in enumerate(REPLAY_STEPS):
-            phase = step["phase"]
-            if phase != current_phase:
-                icon, label, colour = PHASE_META[phase]
+            group = step["group"]
+
+            if group != current_group:
+                icon, label, colour, bg_header = GROUP_HEADERS[group]
                 cards_html.append(
-                    f'<p style="font-size:0.68rem;font-weight:600;color:#9CA3AF;'
-                    f'letter-spacing:0.08em;text-transform:uppercase;margin:14px 0 6px">'
-                    f'{icon} {label}</p>'
+                    f'<div style="display:flex;align-items:center;gap:6px;'
+                    f'background:{bg_header};border-left:3px solid {colour};'
+                    f'border-radius:4px;padding:5px 10px;margin:{"0" if idx == 0 else "14px"} 0 8px">'
+                    f'<span style="font-size:0.85rem">{icon}</span>'
+                    f'<span style="font-size:0.72rem;font-weight:700;color:{colour};'
+                    f'letter-spacing:0.06em;text-transform:uppercase">{label}</span>'
+                    f'</div>'
                 )
-                current_phase = phase
+                current_group = group
 
-            flag    = step.get("flag") or ""
-            _, _, phase_colour = PHASE_META[phase]
-            border  = BORDER.get(flag) or phase_colour
-            bg      = "#FFF9F9" if flag == "hold" else ("#FDFBFF" if flag == "ckd" else "#ffffff")
+            flag     = step.get("flag") or ""
+            border   = "#16A34A" if flag == "decisions" else "#6B7280"
+            bg_card  = "#F0FDF4" if flag == "decisions" else "#ffffff"
 
-            tool_line = f"{step['tool']}({step['specimen']})" if step["specimen"] else step["tool"]
-            meta      = step["scores"] or step["result"] or ""
-
-            if step["decision"] == "HOLD":
-                badge = '<span style="background:#FEE2E2;color:#991B1B;border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:600">HOLD</span>'
-            elif step["decision"] == "RELEASE":
-                badge = '<span style="background:#DCFCE7;color:#166534;border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:600">RELEASE</span>'
-            else:
-                badge = '<span></span>'
-
-            meta_div = (
-                f'<div style="font-size:0.72rem;color:#6B7280;margin-top:2px">{meta}</div>'
-                if meta else ""
+            cmd_div = (
+                f'<div style="font-family:monospace;font-size:0.70rem;color:#9CA3AF;'
+                f'margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+                f'{step["command"]}</div>'
             )
             cards_html.append(
                 f'<div class="n-card" data-step="{idx}" style="'
                 f'border:1px solid #E5E7EB;border-left:4px solid {border};border-radius:6px;'
-                f'padding:8px 10px;margin-bottom:6px;background:{bg};'
+                f'padding:8px 10px;margin-bottom:6px;background:{bg_card};'
                 f'transition:background 0.25s,box-shadow 0.25s">'
-                f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-                f'<div><span style="font-family:monospace;font-size:0.78rem;font-weight:600;color:#374151">'
-                f'#{idx+1}&nbsp;&nbsp;{tool_line}</span>'
-                f'{meta_div}'
-                f'</div>{badge}</div>'
-                f'<div style="font-size:0.76rem;color:#4B5563;margin-top:5px">{step["detail"]}</div>'
+                f'<div style="font-size:0.80rem;font-weight:600;color:#111827">'
+                f'#{idx+1}&nbsp;&nbsp;{step["title"]}</div>'
+                f'{cmd_div}'
+                f'<div style="font-size:0.75rem;color:#4B5563;margin-top:5px;line-height:1.45">'
+                f'{step["detail"]}</div>'
                 f'</div>'
             )
 
@@ -808,7 +719,7 @@ with tab_replay:
             'setInterval(function(){'
             '  var t=0;try{t=player.getCurrentTime();}catch(e){}'
             '  var active=0;'
-            '  for(var i=0;i<13;i++){if(MARKERS[String(i)]!==undefined&&t>=MARKERS[String(i)])active=i;}'
+            '  for(var i=0;i<8;i++){if(MARKERS[String(i)]!==undefined&&t>=MARKERS[String(i)])active=i;}'
             '  if(active===lastActive)return;'
             '  lastActive=active;'
             '  document.querySelectorAll(".n-card").forEach(function(c,i){'
@@ -832,35 +743,24 @@ with tab_replay:
                 f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`.",
                 icon="⚠️",
             )
-        # Fallback: static step cards
+        # Fallback: static step cards (no recording)
         st.markdown("<br>", unsafe_allow_html=True)
-        PHASE_LABELS = {
-            "standards": ("📖", "Phase 1 — Standards retrieval"),
-            "triage":    ("🧪", "Phase 2 — Specimen triage"),
-            "audit":     ("📋", "Phase 3 — Audit verification"),
+        GROUP_LABELS = {
+            "rule_derivation": ("📐", "Rule Derivation"),
+            "decisions":       ("✅", "Decisions Reached"),
         }
-        current_phase = None
+        current_group = None
         for i, step in enumerate(REPLAY_STEPS, 1):
-            phase = step["phase"]
-            if phase != current_phase:
-                icon, label = PHASE_LABELS[phase]
+            group = step["group"]
+            if group != current_group:
+                icon, label = GROUP_LABELS[group]
                 st.markdown(f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>", unsafe_allow_html=True)
-                current_phase = phase
-            tool_line = f"{step['tool']}({step['specimen']})" if step["specimen"] else step["tool"]
-            if step["decision"] == "HOLD":
-                badge = "<span class='badge-hold'>HOLD</span>"
-            elif step["decision"] == "RELEASE":
-                badge = "<span class='badge-release'>RELEASE</span>"
-            else:
-                badge = "<span></span>"
-            meta = step["scores"] or step["result"] or ""
-            meta_html = f"<div class='step-meta'>{meta}</div>" if meta else ""
+                current_group = group
             flag = step.get("flag") or ""
             st.markdown(
-                f'<div class="step-card phase-{phase} {flag}">'
-                f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-                f'<div><span class="step-tool">#{i}&nbsp;&nbsp;{tool_line}</span>{meta_html}</div>'
-                f'{badge}</div>'
+                f'<div class="step-card phase-triage {flag}">'
+                f'<div style="font-size:0.80rem;font-weight:600;color:#111827">#{i}&nbsp;&nbsp;{step["title"]}</div>'
+                f'<div style="font-family:monospace;font-size:0.70rem;color:#9CA3AF;margin-top:2px">{step["command"]}</div>'
                 f'<div class="step-detail">{step["detail"]}</div></div>',
                 unsafe_allow_html=True,
             )
