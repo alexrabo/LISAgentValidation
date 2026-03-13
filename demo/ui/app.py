@@ -626,84 +626,60 @@ with tab_replay:
     # STEP VIEW
     # ------------------------------------------------------------------
     if replay_view == "Step view":
-        col_steps, col_narration = st.columns([3, 2])
+        # Legend inline at top
+        st.markdown(
+            "<span class='badge-hold'>HOLD</span> &nbsp; specimen flagged for review &nbsp;&nbsp; "
+            "<span class='badge-release'>RELEASE</span> &nbsp; safe to report &nbsp;&nbsp; "
+            "<span style='display:inline-block;width:10px;height:10px;background:#8B5CF6;"
+            "border-radius:2px;vertical-align:middle;margin-right:4px'></span>"
+            "<span style='font-size:0.8rem;color:#4B5563'>CKD edge case</span>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        with col_narration:
-            st.markdown("<p class='section-header'>What to watch for</p>", unsafe_allow_html=True)
-            st.markdown("""
-**Phase 1 — Standards retrieval**
-The agent reads the clinical knowledge graph before touching any specimen.
-The server enforces this: `apply_autoverification` returns an error until `query_knowledge` succeeds.
+        PHASE_LABELS = {
+            "standards": ("📖", "Phase 1 — Standards retrieval"),
+            "triage":    ("🧪", "Phase 2 — Specimen triage"),
+            "audit":     ("📋", "Phase 3 — Audit verification"),
+        }
+        current_phase = None
 
-**Phase 2 — Specimen triage**
-One call per specimen. Each returns a contamination score, a swap score, and a decision.
-Key specimens: S101, S107 (EDTA contamination) · S105, S106 (identity swap pair) · S110 (CKD edge case).
-
-**Phase 3 — Audit verification**
-The agent retrieves the append-only audit log to confirm ALCOA+ compliance before finishing.
-This is the evidence a CAP inspector would ask for.
-""")
-            st.divider()
-            st.caption("**Legend**")
-            st.markdown(
-                "<span class='badge-hold'>HOLD</span> &nbsp; specimen flagged for review &nbsp;&nbsp; "
-                "<span class='badge-release'>RELEASE</span> &nbsp; safe to report",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                "<span style='display:inline-block;width:10px;height:10px;background:#8B5CF6;"
-                "border-radius:2px;margin-right:6px'></span>"
-                "<span style='font-size:0.8rem;color:#4B5563'>CKD edge case</span>",
-                unsafe_allow_html=True,
-            )
-
-        with col_steps:
-            PHASE_LABELS = {
-                "standards": ("📖", "Phase 1 — Standards retrieval"),
-                "triage":    ("🧪", "Phase 2 — Specimen triage"),
-                "audit":     ("📋", "Phase 3 — Audit verification"),
-            }
-            current_phase = None
-
-            for i, step in enumerate(REPLAY_STEPS, 1):
-                phase = step["phase"]
-                if phase != current_phase:
-                    icon, label = PHASE_LABELS[phase]
-                    st.markdown(
-                        f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>",
-                        unsafe_allow_html=True,
-                    )
-                    current_phase = phase
-
-                flag = step.get("flag") or ""
-                card_class = f"step-card phase-{phase} {flag}".strip()
-
-                if step["specimen"]:
-                    tool_line = f"{step['tool']}({step['specimen']})"
-                else:
-                    tool_line = step["tool"]
-
-                if step["decision"] == "HOLD":
-                    badge = "<span class='badge-hold'>HOLD</span>"
-                elif step["decision"] == "RELEASE":
-                    badge = "<span class='badge-release'>RELEASE</span>"
-                else:
-                    badge = ""
-
-                scores_line = f"<span class='step-meta'>{step['scores']}</span>" if step["scores"] else ""
-                result_line = f"<span class='step-meta'>{step['result']}</span>" if step["result"] else ""
-
+        for i, step in enumerate(REPLAY_STEPS, 1):
+            phase = step["phase"]
+            if phase != current_phase:
+                icon, label = PHASE_LABELS[phase]
                 st.markdown(
-                    f"""<div class="{card_class}">
-                      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                        <span class="step-tool">#{i} &nbsp; {tool_line}</span>
-                        {badge}
-                      </div>
-                      {scores_line}{result_line}
-                      <div class="step-detail">{step['detail']}</div>
-                    </div>""",
+                    f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>",
                     unsafe_allow_html=True,
                 )
+                current_phase = phase
+
+            flag = step.get("flag") or ""
+            card_class = f"step-card phase-{phase} {flag}".strip()
+
+            tool_line = f"{step['tool']}({step['specimen']})" if step["specimen"] else step["tool"]
+
+            if step["decision"] == "HOLD":
+                badge = "<span class='badge-hold'>HOLD</span>"
+            elif step["decision"] == "RELEASE":
+                badge = "<span class='badge-release'>RELEASE</span>"
+            else:
+                badge = ""
+
+            scores_line = f"<span class='step-meta'>{step['scores']}</span>" if step["scores"] else ""
+            result_line = f"<span class='step-meta'>{step['result']}</span>" if step["result"] else ""
+
+            st.markdown(
+                f"""<div class="{card_class}">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                    <span class="step-tool">#{i} &nbsp; {tool_line}</span>
+                    {badge}
+                  </div>
+                  {scores_line}{result_line}
+                  <div class="step-detail">{step['detail']}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
 
     # ------------------------------------------------------------------
     # TERMINAL RECORDING
