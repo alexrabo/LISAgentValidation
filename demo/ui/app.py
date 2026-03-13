@@ -208,6 +208,12 @@ st.components.v1.html("""
 
     doc.body.appendChild(btn);
     update();
+
+    // Force sidebar open on every page load regardless of browser-stored state
+    if (sidebar.getAttribute('aria-expanded') === 'false') {
+      var native = doc.querySelector('[data-testid="stSidebarCollapseButton"] button');
+      if (native) { native.click(); setTimeout(update, 350); }
+    }
   }
 
   // Run after Streamlit has finished rendering
