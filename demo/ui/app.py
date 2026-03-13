@@ -34,7 +34,7 @@ st.set_page_config(
     page_title="LIS AI Validation",
     page_icon="🧪",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ---------------------------------------------------------------------------
@@ -82,14 +82,9 @@ st.markdown("""
   [data-testid="stToolbar"] { display: none; }
   header[data-testid="stHeader"] { background: transparent; }
   footer { visibility: hidden; }
-  /* Hide sidebar — navigation lives in the top bar */
-  [data-testid="stSidebar"] { display: none !important; }
+  /* Hide native sidebar toggle — replaced by custom JS button */
   [data-testid="stSidebarCollapseButton"] { display: none !important; }
-  [data-testid="collapsedControl"] { display: none !important; }
-  /* Top bar */
-  .topbar-title { font-size: 1.05rem; font-weight: 700; color: #111827; }
-  .topbar-sub   { font-size: 0.75rem; color: #6B7280; margin-top: 0.1rem; }
-  .topbar-meta  { font-size: 0.75rem; color: #9CA3AF; text-align: right; line-height: 1.6; }
+  [data-testid="collapsedControl"]        { display: none !important; }
 
   /* Copyright footer */
   .copyright {
@@ -135,35 +130,92 @@ def fetch_recording_cast() -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Top bar
+# Sidebar
 # ---------------------------------------------------------------------------
-tb_left, tb_mid, tb_right = st.columns([3, 2, 2])
+with st.sidebar:
+    st.markdown("### 🧪 LIS AI Validation")
+    st.caption("CLSI EP33 · Two-layer evaluation framework")
+    st.divider()
 
-with tb_left:
-    st.markdown(
-        "<div class='topbar-title'>🧪 LIS AI Validation</div>"
-        "<div class='topbar-sub'>CLSI EP33 · Two-layer agent validation framework</div>",
-        unsafe_allow_html=True,
-    )
-
-with tb_mid:
-    mode = st.selectbox(
+    mode = st.radio(
         "Mode",
         ["Demo", "Harbor"],
         index=0,
         help="Demo: pre-computed results from a verified run.\nHarbor: run via TerminalBench.",
     )
 
-with tb_right:
-    st.markdown(
-        "<div class='topbar-meta'>"
-        "Layer 1 — Decision quality &nbsp;·&nbsp; Layer 2 — Reasoning provenance<br>"
-        "Specimens: S100–S110 &nbsp;·&nbsp; 11 total"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    st.divider()
+    st.caption("Layer 1 — Decision quality  \nLayer 2 — Reasoning provenance")
+    st.caption("Specimens: S100–S110 (11 total)")
 
-st.divider()
+# ---------------------------------------------------------------------------
+# Custom sidebar toggle button (replaces unreliable native Streamlit button)
+# Injected into parent DOM via same-origin iframe access
+# ---------------------------------------------------------------------------
+st.components.v1.html("""
+<script>
+(function () {
+  function init() {
+    var doc = window.parent.document;
+    var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+    if (!sidebar) { setTimeout(init, 300); return; }
+
+    // Remove any previous instance (hot-reload safety)
+    var prev = doc.getElementById('lis-sidebar-toggle');
+    if (prev) prev.remove();
+
+    var btn = doc.createElement('button');
+    btn.id = 'lis-sidebar-toggle';
+    Object.assign(btn.style, {
+      position:       'fixed',
+      top:            '50%',
+      transform:      'translateY(-50%)',
+      zIndex:         '99999',
+      background:     '#ffffff',
+      border:         '1px solid #D1D5DB',
+      borderLeft:     'none',
+      borderRadius:   '0 6px 6px 0',
+      width:          '18px',
+      height:         '52px',
+      cursor:         'pointer',
+      display:        'flex',
+      alignItems:     'center',
+      justifyContent: 'center',
+      fontSize:       '16px',
+      color:          '#6B7280',
+      boxShadow:      '2px 0 6px rgba(0,0,0,0.10)',
+      padding:        '0',
+      lineHeight:     '1',
+      transition:     'left 0.3s ease, opacity 0.2s ease',
+    });
+
+    function update() {
+      var expanded = sidebar.getAttribute('aria-expanded') !== 'false';
+      btn.textContent = expanded ? '\u2039' : '\u203a';   // ‹ or ›
+      var rect = sidebar.getBoundingClientRect();
+      btn.style.left = (expanded ? rect.right - 2 : 0) + 'px';
+    }
+
+    btn.addEventListener('click', function () {
+      var native = doc.querySelector('[data-testid="stSidebarCollapseButton"] button');
+      if (native) { native.click(); setTimeout(update, 350); }
+    });
+
+    var observer = new MutationObserver(update);
+    observer.observe(sidebar, {
+      attributes: true,
+      attributeFilter: ['aria-expanded', 'style', 'class'],
+    });
+
+    doc.body.appendChild(btn);
+    update();
+  }
+
+  // Run after Streamlit has finished rendering
+  setTimeout(init, 800);
+})();
+</script>
+""", height=0)
 
 
 # ---------------------------------------------------------------------------
