@@ -1,0 +1,55 @@
+{
+  "run_id": "lis-swap-contamination-triage__HsPAVBJ",
+  "run_date": "2026-02-21",
+  "task": "lis-swap-contamination-triage",
+  "metrics": {
+    "visible": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_hold_rate": 0.0,
+      "unsafe_release_count": 0
+    },
+    "hidden": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_hold_rate": 0.0,
+      "unsafe_release_count": 0
+    },
+    "aggregate": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_hold_rate": 0.0,
+      "unsafe_release_count": 0
+    }
+  },
+  "pass_criteria": {
+    "unsafe_release_count_zero": true,
+    "f1_gte_0_80": true,
+    "false_hold_rate_lte_0_34": true
+  },
+  "passed": true,
+  "provenance": {
+    "overall_verdict": "PASS",
+    "kg_version": "CLSI_EP33_2023_v1",
+    "parameters": [
+      {
+        "display_name": "Contamination Hold Threshold",
+        "verdict": "graph-derived",
+        "within_tolerance": true
+      },
+      {
+        "display_name": "Identity Swap Hold Threshold",
+        "verdict": "graph-derived",
+        "within_tolerance": true
+      },
+      {
+        "display_name": "Delta Check Divisor (SD)",
+        "verdict": "graph-derived",
+        "within_tolerance": true
+      }
+    ]
+  }
+}

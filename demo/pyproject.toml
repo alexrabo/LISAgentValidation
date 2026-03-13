@@ -6,8 +6,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.135.1",
+    "google-cloud-storage>=3.9.0",
     "lis-triage-engine",
     "mcp[cli]>=1.26.0",
+    "plotly>=6.6.0",
+    "streamlit>=1.55.0",
     "uvicorn[standard]>=0.41.0",
 ]
 

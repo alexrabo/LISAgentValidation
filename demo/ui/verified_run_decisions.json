@@ -1,0 +1,114 @@
+{
+  "batch_id": "BATCH-VIS-002",
+  "run_id": "lis-swap-contamination-triage__HsPAVBJ",
+  "run_date": "2026-02-21",
+  "specimens": [
+    {
+      "specimen_id": "S100",
+      "patient_id": "P001",
+      "decision": "RELEASE",
+      "contamination_score": 0.0,
+      "swap_score": 0.021,
+      "truth_label": "NORMAL",
+      "truth_category": "Normal result"
+    },
+    {
+      "specimen_id": "S101",
+      "patient_id": "P002",
+      "decision": "HOLD",
+      "contamination_score": 1.5,
+      "swap_score": 0.0,
+      "truth_label": "CONTAMINATION",
+      "truth_category": "EDTA contamination (K\u2191 Ca\u2193)",
+      "hold_reason": "K +6.3 SD above baseline; Ca \u22124.8 SD below baseline",
+      "hold_detail": "K measured at 6.9 mmol/L against patient P002 baseline of 5.0 \u00b1 0.30 mmol/L (+6.3 SD). Ca measured at 7.1 mg/dL against baseline of 9.0 \u00b1 0.40 mg/dL (\u22124.8 SD). Concurrent acute K elevation with Ca depression is the hallmark EDTA anticoagulant contamination signature \u2014 EDTA chelates calcium, causing artefactual hypocalcaemia while potassium leaches from cells. Both analytes exceed the CLSI EP33 delta-check threshold independently; their co-occurrence makes contamination near-certain."
+    },
+    {
+      "specimen_id": "S102",
+      "patient_id": "P003",
+      "decision": "RELEASE",
+      "contamination_score": 0.030,
+      "swap_score": 0.0,
+      "truth_label": "NORMAL",
+      "truth_category": "Normal result"
+    },
+    {
+      "specimen_id": "S103",
+      "patient_id": "P004",
+      "decision": "RELEASE",
+      "contamination_score": 0.0,
+      "swap_score": 0.030,
+      "truth_label": "NORMAL",
+      "truth_category": "Normal result"
+    },
+    {
+      "specimen_id": "S104",
+      "patient_id": "P005",
+      "decision": "RELEASE",
+      "contamination_score": 0.021,
+      "swap_score": 0.0,
+      "truth_label": "NORMAL",
+      "truth_category": "Normal result"
+    },
+    {
+      "specimen_id": "S105",
+      "patient_id": "P001",
+      "decision": "HOLD",
+      "contamination_score": 0.335,
+      "swap_score": 0.970,
+      "truth_label": "SWAP",
+      "truth_category": "Identity swap (S105 \u21d4 S106)",
+      "hold_reason": "Glucose +10.8 SD above P001 baseline; profile fits P004",
+      "hold_detail": "Glucose measured at 221 mg/dL against patient P001 baseline of 92 \u00b1 12 mg/dL (+10.8 SD) \u2014 an extreme outlier for this patient. Pairwise swap analysis found that reassigning S105 to patient P004 (glucose baseline 218 \u00b1 25 mg/dL) reduces the total weighted mismatch by 97%. S106, assigned to P004, shows the mirror pattern with glucose 90 mg/dL fitting P001\u2019s baseline instead. The agent correctly identified both specimens as a swapped pair rather than treating the glucose anomaly as a single-specimen error."
+    },
+    {
+      "specimen_id": "S106",
+      "patient_id": "P004",
+      "decision": "HOLD",
+      "contamination_score": 0.0,
+      "swap_score": 0.970,
+      "truth_label": "SWAP",
+      "truth_category": "Identity swap (S105 \u21d4 S106)",
+      "hold_reason": "Glucose \u22125.1 SD below P004 baseline; profile fits P001",
+      "hold_detail": "Glucose measured at 90 mg/dL against patient P004 baseline of 218 \u00b1 25 mg/dL (\u22125.1 SD). Pairwise swap analysis found that reassigning S106 to patient P001 (glucose baseline 92 \u00b1 12 mg/dL) reduces the total weighted mismatch by 97%. This specimen is the swap partner of S105 \u2014 the two were collected from the correct patients but labelled in reverse. Both are held pending re-labelling; neither analyte profile indicates contamination."
+    },
+    {
+      "specimen_id": "S107",
+      "patient_id": "P002",
+      "decision": "HOLD",
+      "contamination_score": 1.414,
+      "swap_score": 0.0,
+      "truth_label": "CONTAMINATION",
+      "truth_category": "EDTA contamination (K\u2191 Ca\u2193)",
+      "hold_reason": "K +4.0 SD above baseline; Ca \u22123.0 SD below baseline",
+      "hold_detail": "K measured at 6.2 mmol/L against patient P002 baseline of 5.0 \u00b1 0.30 mmol/L (+4.0 SD). Ca measured at 7.8 mg/dL against baseline of 9.0 \u00b1 0.40 mg/dL (\u22123.0 SD). Both analytes breach the CLSI EP33 delta-check threshold simultaneously. The co-occurrence pattern is consistent with EDTA tube contamination. Note: S107 presents a subtler signal than S101 (contamination score 1.41 vs 1.50) \u2014 likely a smaller volume of EDTA carry-over \u2014 but the delta-check correctly flags it."
+    },
+    {
+      "specimen_id": "S108",
+      "patient_id": "P003",
+      "decision": "RELEASE",
+      "contamination_score": 0.0,
+      "swap_score": 0.0,
+      "truth_label": "NORMAL",
+      "truth_category": "Normal result"
+    },
+    {
+      "specimen_id": "S109",
+      "patient_id": "P005",
+      "decision": "RELEASE",
+      "contamination_score": 0.0,
+      "swap_score": 0.0,
+      "truth_label": "NORMAL",
+      "truth_category": "Normal result"
+    },
+    {
+      "specimen_id": "S110",
+      "patient_id": "P011",
+      "decision": "RELEASE",
+      "contamination_score": 0.0,
+      "swap_score": 0.0,
+      "truth_label": "NORMAL",
+      "truth_category": "CKD interference guard \u2014 chronic hyperkalemia, Ca preserved"
+    }
+  ]
+}
