@@ -80,10 +80,22 @@ st.markdown("""
   #MainMenu { visibility: hidden; }
   [data-testid="stDeployButton"] { display: none; }
   [data-testid="stToolbar"] { display: none; }
-  header[data-testid="stHeader"] { background: transparent; }
   footer { visibility: hidden; }
-  /* Always show sidebar collapse/expand toggle */
-  [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; }
+  /* Keep header visible but background-free so sidebar toggle stays clickable */
+  header[data-testid="stHeader"] { background: transparent; z-index: 999990; }
+  /* Sidebar expand/collapse button — ensure always rendered and clickable */
+  [data-testid="collapsedControl"],
+  [data-testid="stSidebarCollapsedControl"],
+  button[aria-label="Open sidebar"],
+  button[aria-label="Close sidebar"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 999999 !important;
+    background: rgba(255,255,255,0.9) !important;
+    border-radius: 4px !important;
+  }
 
   /* Copyright footer */
   .copyright {
