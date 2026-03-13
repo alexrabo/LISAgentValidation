@@ -147,12 +147,10 @@ with tb_left:
     )
 
 with tb_mid:
-    mode = st.radio(
+    mode = st.selectbox(
         "Mode",
         ["Demo", "Harbor"],
-        horizontal=True,
         index=0,
-        label_visibility="collapsed",
         help="Demo: pre-computed results from a verified run.\nHarbor: run via TerminalBench.",
     )
 
@@ -721,12 +719,13 @@ with tab_replay:
               const url  = URL.createObjectURL(blob);
               AsciinemaPlayer.create(url, document.getElementById('player'), {{
                 cols: 120,
-                rows: 26,
+                rows: 24,
                 autoPlay: false,
                 loop: false,
                 speed: 1.5,
                 theme: 'monokai',
-                fit: 'width',
+                fit: false,
+                terminalFontSize: 13,
               }});
             </script>
             """
