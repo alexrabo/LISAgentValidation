@@ -65,6 +65,7 @@ st.markdown("""
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
     background: #FFFFFF;
+    max-width: 860px;
   }
   .step-card.phase-standards { border-left: 4px solid #3B82F6; }
   .step-card.phase-triage    { border-left: 4px solid #6B7280; }
@@ -666,16 +667,18 @@ with tab_replay:
             else:
                 badge = ""
 
-            scores_line = f"<span class='step-meta'>{step['scores']}</span>" if step["scores"] else ""
-            result_line = f"<span class='step-meta'>{step['result']}</span>" if step["result"] else ""
+            meta = step["scores"] or step["result"] or ""
+            meta_html = f"<div class='step-meta'>{meta}</div>" if meta else ""
 
             st.markdown(
                 f"""<div class="{card_class}">
                   <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                    <span class="step-tool">#{i} &nbsp; {tool_line}</span>
+                    <div>
+                      <span class="step-tool">#{i} &nbsp; {tool_line}</span>
+                      {meta_html}
+                    </div>
                     {badge}
                   </div>
-                  {scores_line}{result_line}
                   <div class="step-detail">{step['detail']}</div>
                 </div>""",
                 unsafe_allow_html=True,
