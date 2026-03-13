@@ -81,6 +81,8 @@ st.markdown("""
   [data-testid="stToolbar"] { display: none; }
   header[data-testid="stHeader"] { background: transparent; }
   footer { visibility: hidden; }
+  /* Always show sidebar collapse/expand toggle */
+  [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; }
 
   /* Copyright footer */
   .copyright {
@@ -453,8 +455,8 @@ REPLAY_STEPS = [
         "result": "CLSI EP33 graph retrieved",
         "detail": (
             "The agent reads the rules before touching any specimen. "
-            "The server enforces this: `apply_autoverification` returns an error until "
-            "`query_knowledge` has been called. The agent cannot skip the standards-reading step."
+            "The server enforces this: <code>apply_autoverification</code> returns an error until "
+            "<code>query_knowledge</code> has been called. The agent cannot skip the standards-reading step."
         ),
         "flag": None,
     },
@@ -707,60 +709,67 @@ This is the evidence a CAP inspector would ask for.
     # TERMINAL RECORDING
     # ------------------------------------------------------------------
     else:
-        col_player, col_narration = st.columns([3, 2])
+        if cast_content:
+            cast_escaped = cast_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+            player_html = f"""
+            <link rel="stylesheet" type="text/css"
+                  href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>
+            <div id="player"></div>
+            <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
+            <script>
+              const castText = `{cast_escaped}`;
+              const blob = new Blob([castText], {{type: 'text/plain'}});
+              const url  = URL.createObjectURL(blob);
+              AsciinemaPlayer.create(url, document.getElementById('player'), {{
+                cols: 120,
+                rows: 35,
+                autoPlay: false,
+                loop: false,
+                speed: 1.5,
+                theme: 'monokai',
+                fit: 'width',
+              }});
+            </script>
+            """
+            st.info("**Click inside the terminal to reveal playback controls** — play/pause, progress bar, and speed.", icon="▶")
+            st.components.v1.html(player_html, height=600, scrolling=False)
 
-        with col_narration:
-            st.markdown("<p class='section-header'>What to watch for</p>", unsafe_allow_html=True)
-            st.markdown("""
-**Phase 1 — Standards retrieval**
-Watch the agent call `query_knowledge` first. The JSON response contains the CLSI EP33 graph nodes with threshold values.
-
-**Phase 2 — Specimen triage**
-Each `apply_autoverification` call returns a verbose JSON blob — this is intentional so the agent can reason over raw scores. Key moments: S101/S107 (contamination), S105/S106 (swap pair), S110 (CKD release).
-
-**Phase 3 — Audit verification**
-Final `get_audit_log` call confirms the session audit trail before the agent finishes.
-""")
-
-        with col_player:
-            if cast_content:
-                cast_escaped = cast_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-                player_html = f"""
-                <link rel="stylesheet" type="text/css"
-                      href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>
-                <div id="player"></div>
-                <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
-                <script>
-                  const castText = `{cast_escaped}`;
-                  const blob = new Blob([castText], {{type: 'text/plain'}});
-                  const url  = URL.createObjectURL(blob);
-                  AsciinemaPlayer.create(url, document.getElementById('player'), {{
-                    cols: 160,
-                    rows: 35,
-                    autoPlay: false,
-                    loop: false,
-                    speed: 1.5,
-                    theme: 'monokai',
-                    fit: 'width',
-                    terminalFontSize: 'small',
-                  }});
-                </script>
-                """
-                st.components.v1.html(player_html, height=580, scrolling=False)
-                st.caption("Click to play/pause · click the progress bar to seek · use 1× / 2× speed buttons")
+            st.divider()
+            st.markdown("<p class='section-header'>What you are watching</p>", unsafe_allow_html=True)
+            c1, c2, c3 = st.columns(3)
+            c1.markdown("**Phase 1 — Standards retrieval**")
+            c1.markdown(
+                "The agent calls `query_knowledge` first. "
+                "The JSON response contains CLSI EP33 graph nodes with the delta-check thresholds and swap weights. "
+                "The server blocks triage until this call succeeds."
+            )
+            c2.markdown("**Phase 2 — Specimen triage (S100–S110)**")
+            c2.markdown(
+                "One `apply_autoverification` call per specimen. Each returns a verbose JSON blob with "
+                "contamination score, swap score, and decision. "
+                "Watch for: **S101, S107** (EDTA contamination HOLDs) · "
+                "**S105, S106** (swap pair, both held) · "
+                "**S110** (CKD patient — elevated K, correctly released)."
+            )
+            c3.markdown("**Phase 3 — Audit verification**")
+            c3.markdown(
+                "Final `get_audit_log` call retrieves the append-only session audit trail. "
+                "Confirms every tool call is timestamped, attributed, and specimen values are write-once. "
+                "This is the ALCOA+ evidence a CAP inspector would ask for."
+            )
+        else:
+            if not GCS_BUCKET:
+                st.warning(
+                    "Recording not available — set `GCS_BUCKET` environment variable "
+                    "and upload `recording.cast` to your GCS bucket.",
+                    icon="⚠️",
+                )
             else:
-                if not GCS_BUCKET:
-                    st.warning(
-                        "Recording not available — set `GCS_BUCKET` environment variable "
-                        "and upload `recording.cast` to your GCS bucket.",
-                        icon="⚠️",
-                    )
-                else:
-                    st.warning(
-                        f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`. "
-                        "Check service account permissions.",
-                        icon="⚠️",
-                    )
+                st.warning(
+                    f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`. "
+                    "Check service account permissions.",
+                    icon="⚠️",
+                )
 
 
 # ===========================================================================
