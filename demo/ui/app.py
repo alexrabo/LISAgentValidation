@@ -34,7 +34,7 @@ st.set_page_config(
     page_title="LIS AI Validation",
     page_icon="🧪",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ---------------------------------------------------------------------------
@@ -80,22 +80,16 @@ st.markdown("""
   #MainMenu { visibility: hidden; }
   [data-testid="stDeployButton"] { display: none; }
   [data-testid="stToolbar"] { display: none; }
+  header[data-testid="stHeader"] { background: transparent; }
   footer { visibility: hidden; }
-  /* Keep header visible but background-free so sidebar toggle stays clickable */
-  header[data-testid="stHeader"] { background: transparent; z-index: 999990; }
-  /* Sidebar expand/collapse button — ensure always rendered and clickable */
-  [data-testid="collapsedControl"],
-  [data-testid="stSidebarCollapsedControl"],
-  button[aria-label="Open sidebar"],
-  button[aria-label="Close sidebar"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    z-index: 999999 !important;
-    background: rgba(255,255,255,0.9) !important;
-    border-radius: 4px !important;
-  }
+  /* Hide sidebar — navigation lives in the top bar */
+  [data-testid="stSidebar"] { display: none !important; }
+  [data-testid="stSidebarCollapseButton"] { display: none !important; }
+  [data-testid="collapsedControl"] { display: none !important; }
+  /* Top bar */
+  .topbar-title { font-size: 1.05rem; font-weight: 700; color: #111827; }
+  .topbar-sub   { font-size: 0.75rem; color: #6B7280; margin-top: 0.1rem; }
+  .topbar-meta  { font-size: 0.75rem; color: #9CA3AF; text-align: right; line-height: 1.6; }
 
   /* Copyright footer */
   .copyright {
@@ -141,23 +135,37 @@ def fetch_recording_cast() -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Sidebar
+# Top bar
 # ---------------------------------------------------------------------------
-with st.sidebar:
-    st.markdown("### 🧪 LIS AI Validation")
-    st.caption("CLSI EP33 · Two-layer evaluation framework")
-    st.divider()
+tb_left, tb_mid, tb_right = st.columns([3, 2, 2])
 
+with tb_left:
+    st.markdown(
+        "<div class='topbar-title'>🧪 LIS AI Validation</div>"
+        "<div class='topbar-sub'>CLSI EP33 · Two-layer agent validation framework</div>",
+        unsafe_allow_html=True,
+    )
+
+with tb_mid:
     mode = st.radio(
         "Mode",
         ["Demo", "Harbor"],
+        horizontal=True,
         index=0,
+        label_visibility="collapsed",
         help="Demo: pre-computed results from a verified run.\nHarbor: run via TerminalBench.",
     )
 
-    st.divider()
-    st.caption("Layer 1 — Decision quality  \nLayer 2 — Reasoning provenance")
-    st.caption("Specimens: S100–S110 (11 total)")
+with tb_right:
+    st.markdown(
+        "<div class='topbar-meta'>"
+        "Layer 1 — Decision quality &nbsp;·&nbsp; Layer 2 — Reasoning provenance<br>"
+        "Specimens: S100–S110 &nbsp;·&nbsp; 11 total"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+st.divider()
 
 
 # ---------------------------------------------------------------------------
