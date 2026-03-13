@@ -58,6 +58,23 @@ st.markdown("""
   .section-header { font-size: 0.72rem; font-weight: 600; color: #9CA3AF; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
   div[data-testid="stTab"] button { font-size: 0.9rem; }
 
+  /* Step-view cards */
+  .step-card {
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: #FFFFFF;
+  }
+  .step-card.phase-standards { border-left: 4px solid #3B82F6; }
+  .step-card.phase-triage    { border-left: 4px solid #6B7280; }
+  .step-card.phase-triage.hold { border-left: 4px solid #EF4444; background: #FFF9F9; }
+  .step-card.phase-triage.ckd  { border-left: 4px solid #8B5CF6; background: #FDFBFF; }
+  .step-card.phase-audit     { border-left: 4px solid #F97316; }
+  .step-tool  { font-family: monospace; font-size: 0.82rem; color: #374151; font-weight: 600; }
+  .step-meta  { font-size: 0.75rem; color: #6B7280; margin-top: 0.15rem; }
+  .step-detail { font-size: 0.82rem; color: #4B5563; margin-top: 0.35rem; }
+
   /* Hide Streamlit chrome */
   #MainMenu { visibility: hidden; }
   [data-testid="stDeployButton"] { display: none; }
@@ -426,6 +443,165 @@ with tab_scatter:
 # ===========================================================================
 # TAB 3 — Agent Replay
 # ===========================================================================
+REPLAY_STEPS = [
+    {
+        "tool": "query_knowledge",
+        "specimen": None,
+        "phase": "standards",
+        "decision": None,
+        "scores": None,
+        "result": "CLSI EP33 graph retrieved",
+        "detail": (
+            "The agent reads the rules before touching any specimen. "
+            "The server enforces this: `apply_autoverification` returns an error until "
+            "`query_knowledge` has been called. The agent cannot skip the standards-reading step."
+        ),
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S100",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.000  ·  swap 0.021",
+        "result": None,
+        "detail": "Values within patient-relative delta-check range. No contamination or swap signature.",
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S101",
+        "phase": "triage",
+        "decision": "HOLD",
+        "scores": "contamination 1.500  ·  swap 0.000",
+        "result": None,
+        "detail": (
+            "EDTA contamination. K elevated 1.5 SD above patient's own prior; "
+            "Ca depressed simultaneously. Classic purple-top tube signature."
+        ),
+        "flag": "hold",
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S102",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.030  ·  swap 0.000",
+        "result": None,
+        "detail": "Trace contamination score well below threshold. Released.",
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S103",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.000  ·  swap 0.030",
+        "result": None,
+        "detail": "Low swap score — patient assignment is the better fit. Released.",
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S104",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.021  ·  swap 0.000",
+        "result": None,
+        "detail": "Both scores near zero. Released.",
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S105",
+        "phase": "triage",
+        "decision": "HOLD",
+        "scores": "contamination 0.335  ·  swap 0.970",
+        "result": None,
+        "detail": (
+            "Identity swap — swap pair with S106. "
+            "Swapping their patient assignments reduces mismatch score by 0.97 SD. "
+            "Both specimens held pending re-labelling."
+        ),
+        "flag": "hold",
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S106",
+        "phase": "triage",
+        "decision": "HOLD",
+        "scores": "contamination 0.000  ·  swap 0.970",
+        "result": None,
+        "detail": (
+            "Identity swap — swap pair with S105. "
+            "No contamination signature; the hold is driven entirely by pairwise swap evidence."
+        ),
+        "flag": "hold",
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S107",
+        "phase": "triage",
+        "decision": "HOLD",
+        "scores": "contamination 1.414  ·  swap 0.000",
+        "result": None,
+        "detail": (
+            "EDTA contamination. K and Ca both deviate from patient prior by 1.41 SD. "
+            "No swap component — the tube contents are wrong, not the label."
+        ),
+        "flag": "hold",
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S108",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.000  ·  swap 0.000",
+        "result": None,
+        "detail": "Both scores zero. Released.",
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S109",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.000  ·  swap 0.000",
+        "result": None,
+        "detail": "Both scores zero. Released.",
+        "flag": None,
+    },
+    {
+        "tool": "apply_autoverification",
+        "specimen": "S110",
+        "phase": "triage",
+        "decision": "RELEASE",
+        "scores": "contamination 0.000  ·  swap 0.000",
+        "result": None,
+        "detail": (
+            "CKD patient — chronically elevated K (6.10 mmol/L). "
+            "An absolute-threshold agent would flag this as contamination. "
+            "The patient-relative delta check finds K stable within his own baseline. "
+            "Correctly released."
+        ),
+        "flag": "ckd",
+    },
+    {
+        "tool": "get_audit_log",
+        "specimen": None,
+        "phase": "audit",
+        "decision": None,
+        "scores": None,
+        "result": "ALCOA+ audit trail verified — 13 events",
+        "detail": (
+            "Append-only log confirmed: every tool call timestamped, attributed to session ID, "
+            "specimen values write-once. Provides the CAP/CLIA documentation trail."
+        ),
+        "flag": None,
+    },
+]
+
+
 with tab_replay:
 
     st.markdown("<p class='section-header'>Agent terminal session — verified run</p>", unsafe_allow_html=True)
@@ -436,65 +612,155 @@ with tab_replay:
 
     cast_content = fetch_recording_cast()
 
-    if cast_content:
-        # Embed asciinema player via CDN
-        # Inline the cast as a JS variable to avoid a second network request
-        cast_escaped = cast_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+    replay_view = st.radio(
+        "View",
+        ["Step view", "Terminal recording"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        player_html = f"""
-        <link rel="stylesheet" type="text/css"
-              href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>
-        <div id="player" style="width:100%;"></div>
-        <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
-        <script>
-          const castText = `{cast_escaped}`;
-          const blob = new Blob([castText], {{type: 'text/plain'}});
-          const url  = URL.createObjectURL(blob);
-          AsciinemaPlayer.create(url, document.getElementById('player'), {{
-            cols: 220,
-            rows: 40,
-            autoPlay: false,
-            loop: false,
-            speed: 1,
-            theme: 'monokai',
-            fit: 'width',
-          }});
-        </script>
-        """
-        st.components.v1.html(player_html, height=520, scrolling=False)
+    # ------------------------------------------------------------------
+    # STEP VIEW
+    # ------------------------------------------------------------------
+    if replay_view == "Step view":
+        col_steps, col_narration = st.columns([3, 2])
 
+        with col_narration:
+            st.markdown("<p class='section-header'>What to watch for</p>", unsafe_allow_html=True)
+            st.markdown("""
+**Phase 1 — Standards retrieval**
+The agent reads the clinical knowledge graph before touching any specimen.
+The server enforces this: `apply_autoverification` returns an error until `query_knowledge` succeeds.
+
+**Phase 2 — Specimen triage**
+One call per specimen. Each returns a contamination score, a swap score, and a decision.
+Key specimens: S101, S107 (EDTA contamination) · S105, S106 (identity swap pair) · S110 (CKD edge case).
+
+**Phase 3 — Audit verification**
+The agent retrieves the append-only audit log to confirm ALCOA+ compliance before finishing.
+This is the evidence a CAP inspector would ask for.
+""")
+            st.divider()
+            st.caption("**Legend**")
+            st.markdown(
+                "<span class='badge-hold'>HOLD</span> &nbsp; specimen flagged for review &nbsp;&nbsp; "
+                "<span class='badge-release'>RELEASE</span> &nbsp; safe to report",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                "<span style='display:inline-block;width:10px;height:10px;background:#8B5CF6;"
+                "border-radius:2px;margin-right:6px'></span>"
+                "<span style='font-size:0.8rem;color:#4B5563'>CKD edge case</span>",
+                unsafe_allow_html=True,
+            )
+
+        with col_steps:
+            PHASE_LABELS = {
+                "standards": ("📖", "Phase 1 — Standards retrieval"),
+                "triage":    ("🧪", "Phase 2 — Specimen triage"),
+                "audit":     ("📋", "Phase 3 — Audit verification"),
+            }
+            current_phase = None
+
+            for i, step in enumerate(REPLAY_STEPS, 1):
+                phase = step["phase"]
+                if phase != current_phase:
+                    icon, label = PHASE_LABELS[phase]
+                    st.markdown(
+                        f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>",
+                        unsafe_allow_html=True,
+                    )
+                    current_phase = phase
+
+                flag = step.get("flag") or ""
+                card_class = f"step-card phase-{phase} {flag}".strip()
+
+                if step["specimen"]:
+                    tool_line = f"{step['tool']}({step['specimen']})"
+                else:
+                    tool_line = step["tool"]
+
+                if step["decision"] == "HOLD":
+                    badge = "<span class='badge-hold'>HOLD</span>"
+                elif step["decision"] == "RELEASE":
+                    badge = "<span class='badge-release'>RELEASE</span>"
+                else:
+                    badge = ""
+
+                scores_line = f"<span class='step-meta'>{step['scores']}</span>" if step["scores"] else ""
+                result_line = f"<span class='step-meta'>{step['result']}</span>" if step["result"] else ""
+
+                st.markdown(
+                    f"""<div class="{card_class}">
+                      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                        <span class="step-tool">#{i} &nbsp; {tool_line}</span>
+                        {badge}
+                      </div>
+                      {scores_line}{result_line}
+                      <div class="step-detail">{step['detail']}</div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
+
+    # ------------------------------------------------------------------
+    # TERMINAL RECORDING
+    # ------------------------------------------------------------------
     else:
-        if not GCS_BUCKET:
-            st.warning(
-                "Recording not available — set `GCS_BUCKET` environment variable "
-                "and upload `recording.cast` to your GCS bucket.",
-                icon="⚠️",
-            )
-        else:
-            st.warning(
-                f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`. "
-                "Check service account permissions.",
-                icon="⚠️",
-            )
+        col_player, col_narration = st.columns([3, 2])
 
-        # Show tool call summary as fallback
-        st.markdown("**Tool call sequence from the verified run:**")
-        st.code(
-            "query_knowledge          → CLSI EP33 graph retrieved\n"
-            "apply_autoverification S100 → RELEASE  (contamination 0.000, swap 0.021)\n"
-            "apply_autoverification S101 → HOLD     (contamination 1.500, swap 0.000)\n"
-            "apply_autoverification S102 → RELEASE  (contamination 0.030, swap 0.000)\n"
-            "apply_autoverification S103 → RELEASE  (contamination 0.000, swap 0.030)\n"
-            "apply_autoverification S104 → RELEASE  (contamination 0.021, swap 0.000)\n"
-            "apply_autoverification S105 → HOLD     (contamination 0.335, swap 0.970)\n"
-            "apply_autoverification S106 → HOLD     (contamination 0.000, swap 0.970)\n"
-            "apply_autoverification S107 → HOLD     (contamination 1.414, swap 0.000)\n"
-            "apply_autoverification S108 → RELEASE  (contamination 0.000, swap 0.000)\n"
-            "apply_autoverification S109 → RELEASE  (contamination 0.000, swap 0.000)\n"
-            "apply_autoverification S110 → RELEASE  (contamination 0.000, swap 0.000)\n"
-            "get_audit_log            → ALCOA+ audit trail verified",
-            language="text",
-        )
+        with col_narration:
+            st.markdown("<p class='section-header'>What to watch for</p>", unsafe_allow_html=True)
+            st.markdown("""
+**Phase 1 — Standards retrieval**
+Watch the agent call `query_knowledge` first. The JSON response contains the CLSI EP33 graph nodes with threshold values.
+
+**Phase 2 — Specimen triage**
+Each `apply_autoverification` call returns a verbose JSON blob — this is intentional so the agent can reason over raw scores. Key moments: S101/S107 (contamination), S105/S106 (swap pair), S110 (CKD release).
+
+**Phase 3 — Audit verification**
+Final `get_audit_log` call confirms the session audit trail before the agent finishes.
+""")
+
+        with col_player:
+            if cast_content:
+                cast_escaped = cast_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+                player_html = f"""
+                <link rel="stylesheet" type="text/css"
+                      href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>
+                <div id="player"></div>
+                <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
+                <script>
+                  const castText = `{cast_escaped}`;
+                  const blob = new Blob([castText], {{type: 'text/plain'}});
+                  const url  = URL.createObjectURL(blob);
+                  AsciinemaPlayer.create(url, document.getElementById('player'), {{
+                    cols: 160,
+                    rows: 35,
+                    autoPlay: false,
+                    loop: false,
+                    speed: 1.5,
+                    theme: 'monokai',
+                    fit: 'width',
+                    terminalFontSize: 'small',
+                  }});
+                </script>
+                """
+                st.components.v1.html(player_html, height=580, scrolling=False)
+                st.caption("Click to play/pause · click the progress bar to seek · use 1× / 2× speed buttons")
+            else:
+                if not GCS_BUCKET:
+                    st.warning(
+                        "Recording not available — set `GCS_BUCKET` environment variable "
+                        "and upload `recording.cast` to your GCS bucket.",
+                        icon="⚠️",
+                    )
+                else:
+                    st.warning(
+                        f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`. "
+                        "Check service account permissions.",
+                        icon="⚠️",
+                    )
 
 
 # ===========================================================================
@@ -715,16 +981,17 @@ Specimens in the shaded red regions were held; specimens in the white region wer
 
     with st.expander("▶   Agent Replay"):
         st.markdown("""
-**A recording of the agent working in real time.**
+**Two views of the same verified run.**
 
-This is the actual terminal session from the verified run — not a simulation. You can watch
-Claude call each MCP tool in sequence: first retrieving the clinical knowledge graph
-(`query_knowledge`), then triaging each specimen (`apply_autoverification`), then retrieving
-the audit trail (`get_audit_log`) to confirm ALCOA+ compliance.
+Use the toggle at the top of the tab to switch between:
 
-The tool call sequence is enforced by the server: if the agent attempts to run autoverification
-before querying the knowledge graph, the server returns an error. This ensures the agent cannot
-skip the standards-reading step and go straight to making decisions.
+- **Step view** — 13 annotated tool-call cards, one per agent action, with clinical context for
+  each decision. Clean at any zoom level; every frame is screenshot-ready. Start here for presentations.
+- **Terminal recording** — the raw asciinema session from the actual run. Proves the agent
+  operated in real time against a live LIMS server. Use this to show the raw evidence.
+
+The tool call sequence is enforced by the server: `apply_autoverification` returns an error
+until `query_knowledge` has been called. The agent cannot skip the standards-reading step.
 
 **Run ID:** `lis-swap-contamination-triage__HsPAVBJ` · **Reward:** 1.0 · **Cost:** $0.12
 """)
