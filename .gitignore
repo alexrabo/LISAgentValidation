@@ -9,7 +9,18 @@ methodology/KNOWLEDGE_GROUNDED_EVALUATION_PATTERN_ORIGINAL_v1.md
 
 # Internal project files
 CLAUDE.md
+CONTEXT.md
+IMPL_SPEC.md
+PLAN.md
 MONDAY_LAUNCH_PLAN.md
+spec/
+task/
+
+# TerminalBench — solution and hidden test data must not be public
+lis-swap-contamination-triage/solution/
+lis-swap-contamination-triage/environment/data/hidden_batch.json
+lis-swap-contamination-triage/environment/data/hidden_batch_nolabels.json
+lis-swap-contamination-triage/tests/hidden_batch_nolabels.json
 launch.sh
 design/
 docs/
@@ -45,3 +56,7 @@ ENV/
 # Temporary files
 tmp/
 temp/
+
+# GCP credentials — never commit
+demo/config/sa_key.json
+demo/config/clinical_knowledge.json

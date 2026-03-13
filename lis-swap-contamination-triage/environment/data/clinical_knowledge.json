@@ -1,7 +1,15 @@
 {
   "graph_version": "CLSI_EP33_2023_v1",
+  "map_id": "contamination_swap_map",
   "domain": "clinical_laboratory_informatics",
   "scope": "specimen_identity_and_contamination",
+  "applies_when": {
+    "trigger_pattern": "K_elevated AND Ca_depressed simultaneously, OR pairwise specimen identity mismatch",
+    "trigger_analytes": ["K", "Ca"],
+    "specimen_flags": ["delta_check_failure", "result_inconsistency", "identity_suspect"],
+    "specimen_types": ["serum", "plasma"],
+    "note": "Forward-compatibility annotation for multi-map routing. In single-map deployments this field is informational only."
+  },
   "nodes": {
     "EDTA_contamination": {
       "description": "EDTA anticoagulant from a purple-top CBC tube contaminating a chemistry specimen",
