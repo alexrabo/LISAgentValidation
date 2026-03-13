@@ -115,6 +115,29 @@ def load_decisions() -> list[dict]:
 
 
 @st.cache_data(ttl=300)
+def get_cast_markers(cast_content: str) -> dict:
+    """Compute 13 evenly-spaced artificial markers from cast duration."""
+    import json as _json
+    lines = cast_content.strip().split('\n')
+    duration = None
+    try:
+        duration = _json.loads(lines[0]).get('duration')
+    except Exception:
+        pass
+    if not duration:
+        for line in reversed(lines[1:]):
+            try:
+                duration = float(_json.loads(line)[0])
+                break
+            except Exception:
+                continue
+    if not duration or duration <= 0:
+        return {}
+    slot = duration / 13
+    return {str(i): round(i * slot, 2) for i in range(13)}
+
+
+@st.cache_data(ttl=300)
 def fetch_recording_cast() -> str | None:
     """Fetch recording.cast from GCS. Returns content as string or None on failure."""
     if not GCS_BUCKET:
@@ -687,144 +710,160 @@ with tab_replay:
         "Recording of Claude calling MCP tools against the LIMS server in real time. "
         "Run ID: `lis-swap-contamination-triage__HsPAVBJ` · Reward: 1.0 · Cost: $0.12"
     )
+    st.info("**Click inside the terminal for playback controls** — play/pause, progress bar, speed.", icon="▶")
 
     cast_content = fetch_recording_cast()
 
-    replay_view = st.radio(
-        "View",
-        ["Step view", "Terminal recording"],
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-    st.markdown("<br>", unsafe_allow_html=True)
+    if cast_content:
+        markers     = get_cast_markers(cast_content)
+        markers_json = json.dumps(markers)
+        cast_escaped = cast_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
 
-    # ------------------------------------------------------------------
-    # STEP VIEW
-    # ------------------------------------------------------------------
-    if replay_view == "Step view":
-        # Legend inline at top
-        st.markdown(
-            "<span class='badge-hold'>HOLD</span> &nbsp; specimen flagged for review &nbsp;&nbsp; "
-            "<span class='badge-release'>RELEASE</span> &nbsp; safe to report &nbsp;&nbsp; "
-            "<span style='display:inline-block;width:10px;height:10px;background:#8B5CF6;"
-            "border-radius:2px;vertical-align:middle;margin-right:4px'></span>"
-            "<span style='font-size:0.8rem;color:#4B5563'>CKD edge case</span>",
-            unsafe_allow_html=True,
+        # ------------------------------------------------------------------
+        # Build narration panel HTML (inline styles — lives inside iframe)
+        # ------------------------------------------------------------------
+        PHASE_META = {
+            "standards": ("📖", "Phase 1 — Standards retrieval", "#3B82F6"),
+            "triage":    ("🧪", "Phase 2 — Specimen triage",     "#6B7280"),
+            "audit":     ("📋", "Phase 3 — Audit verification",  "#F97316"),
+        }
+        BORDER = {"hold": "#EF4444", "ckd": "#8B5CF6", "": ""}
+
+        cards_html = []
+        current_phase = None
+        for idx, step in enumerate(REPLAY_STEPS):
+            phase = step["phase"]
+            if phase != current_phase:
+                icon, label, colour = PHASE_META[phase]
+                cards_html.append(
+                    f'<p style="font-size:0.68rem;font-weight:600;color:#9CA3AF;'
+                    f'letter-spacing:0.08em;text-transform:uppercase;margin:14px 0 6px">'
+                    f'{icon} {label}</p>'
+                )
+                current_phase = phase
+
+            flag    = step.get("flag") or ""
+            _, _, phase_colour = PHASE_META[phase]
+            border  = BORDER.get(flag) or phase_colour
+            bg      = "#FFF9F9" if flag == "hold" else ("#FDFBFF" if flag == "ckd" else "#ffffff")
+
+            tool_line = f"{step['tool']}({step['specimen']})" if step["specimen"] else step["tool"]
+            meta      = step["scores"] or step["result"] or ""
+
+            if step["decision"] == "HOLD":
+                badge = '<span style="background:#FEE2E2;color:#991B1B;border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:600">HOLD</span>'
+            elif step["decision"] == "RELEASE":
+                badge = '<span style="background:#DCFCE7;color:#166534;border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:600">RELEASE</span>'
+            else:
+                badge = '<span></span>'
+
+            meta_div = (
+                f'<div style="font-size:0.72rem;color:#6B7280;margin-top:2px">{meta}</div>'
+                if meta else ""
+            )
+            cards_html.append(
+                f'<div class="n-card" data-step="{idx}" style="'
+                f'border:1px solid #E5E7EB;border-left:4px solid {border};border-radius:6px;'
+                f'padding:8px 10px;margin-bottom:6px;background:{bg};'
+                f'transition:background 0.25s,box-shadow 0.25s">'
+                f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+                f'<div><span style="font-family:monospace;font-size:0.78rem;font-weight:600;color:#374151">'
+                f'#{idx+1}&nbsp;&nbsp;{tool_line}</span>'
+                f'{meta_div}'
+                f'</div>{badge}</div>'
+                f'<div style="font-size:0.76rem;color:#4B5563;margin-top:5px">{step["detail"]}</div>'
+                f'</div>'
+            )
+
+        narration_html = "\n".join(cards_html)
+
+        # ------------------------------------------------------------------
+        # Combined component: player (left 58%) + narration panel (right 42%)
+        # ------------------------------------------------------------------
+        component_html = (
+            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>'
+            '<style>'
+            '.n-card.active{background:#EFF6FF!important;border-left-color:#3B82F6!important;box-shadow:0 0 0 1px #BFDBFE}'
+            '</style>'
+            '<div style="display:flex;gap:14px;height:560px">'
+            '  <div style="flex:3;min-width:0;display:flex;flex-direction:column">'
+            '    <div id="player" style="flex:1"></div>'
+            '  </div>'
+            '  <div id="narration" style="flex:2;overflow-y:auto;padding:0 6px 0 2px;'
+            '       scrollbar-width:thin;scrollbar-color:#E5E7EB transparent">'
+            + narration_html +
+            '  </div>'
+            '</div>'
+            '<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>'
+            '<script>'
+            f'const MARKERS={markers_json};'
+            f'const castText=`{cast_escaped}`;'
+            'const blob=new Blob([castText],{type:"text/plain"});'
+            'const url=URL.createObjectURL(blob);'
+            'const player=AsciinemaPlayer.create(url,document.getElementById("player"),{'
+            '  cols:80,rows:24,autoPlay:false,loop:false,speed:1.5,'
+            '  theme:"monokai",fit:false,terminalFontSize:13'
+            '});'
+            'var lastActive=-1;'
+            'setInterval(function(){'
+            '  var t=0;try{t=player.getCurrentTime();}catch(e){}'
+            '  var active=0;'
+            '  for(var i=0;i<13;i++){if(MARKERS[String(i)]!==undefined&&t>=MARKERS[String(i)])active=i;}'
+            '  if(active===lastActive)return;'
+            '  lastActive=active;'
+            '  document.querySelectorAll(".n-card").forEach(function(c,i){'
+            '    if(i===active){c.classList.add("active");c.scrollIntoView({behavior:"smooth",block:"nearest"});}'
+            '    else{c.classList.remove("active");}'
+            '  });'
+            '},250);'
+            '</script>'
         )
-        st.markdown("<br>", unsafe_allow_html=True)
 
+        st.components.v1.html(component_html, height=580, scrolling=False)
+
+    else:
+        if not GCS_BUCKET:
+            st.warning(
+                "Recording not available — set `GCS_BUCKET` and upload `recording.cast`.",
+                icon="⚠️",
+            )
+        else:
+            st.warning(
+                f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`.",
+                icon="⚠️",
+            )
+        # Fallback: static step cards
+        st.markdown("<br>", unsafe_allow_html=True)
         PHASE_LABELS = {
             "standards": ("📖", "Phase 1 — Standards retrieval"),
             "triage":    ("🧪", "Phase 2 — Specimen triage"),
             "audit":     ("📋", "Phase 3 — Audit verification"),
         }
         current_phase = None
-
         for i, step in enumerate(REPLAY_STEPS, 1):
             phase = step["phase"]
             if phase != current_phase:
                 icon, label = PHASE_LABELS[phase]
-                st.markdown(
-                    f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>",
-                    unsafe_allow_html=True,
-                )
+                st.markdown(f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>", unsafe_allow_html=True)
                 current_phase = phase
-
-            flag = step.get("flag") or ""
-            card_class = f"step-card phase-{phase} {flag}".strip()
-
             tool_line = f"{step['tool']}({step['specimen']})" if step["specimen"] else step["tool"]
-
             if step["decision"] == "HOLD":
                 badge = "<span class='badge-hold'>HOLD</span>"
             elif step["decision"] == "RELEASE":
                 badge = "<span class='badge-release'>RELEASE</span>"
             else:
-                badge = "<span></span>"  # placeholder — keeps flex row intact, prevents markdown blank-line injection
-
+                badge = "<span></span>"
             meta = step["scores"] or step["result"] or ""
             meta_html = f"<div class='step-meta'>{meta}</div>" if meta else ""
-
+            flag = step.get("flag") or ""
             st.markdown(
-                f"""<div class="{card_class}">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                    <div>
-                      <span class="step-tool">#{i} &nbsp; {tool_line}</span>
-                      {meta_html}
-                    </div>
-                    {badge}
-                  </div>
-                  <div class="step-detail">{step['detail']}</div>
-                </div>""",
+                f'<div class="step-card phase-{phase} {flag}">'
+                f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+                f'<div><span class="step-tool">#{i}&nbsp;&nbsp;{tool_line}</span>{meta_html}</div>'
+                f'{badge}</div>'
+                f'<div class="step-detail">{step["detail"]}</div></div>',
                 unsafe_allow_html=True,
             )
-
-    # ------------------------------------------------------------------
-    # TERMINAL RECORDING
-    # ------------------------------------------------------------------
-    else:
-        if cast_content:
-            cast_escaped = cast_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-            player_html = f"""
-            <link rel="stylesheet" type="text/css"
-                  href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>
-            <div id="player"></div>
-            <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
-            <script>
-              const castText = `{cast_escaped}`;
-              const blob = new Blob([castText], {{type: 'text/plain'}});
-              const url  = URL.createObjectURL(blob);
-              AsciinemaPlayer.create(url, document.getElementById('player'), {{
-                cols: 120,
-                rows: 24,
-                autoPlay: false,
-                loop: false,
-                speed: 1.5,
-                theme: 'monokai',
-                fit: false,
-                terminalFontSize: 13,
-              }});
-            </script>
-            """
-            st.info("**Click inside the terminal to reveal playback controls** — play/pause, progress bar, and speed.", icon="▶")
-            st.components.v1.html(player_html, height=600, scrolling=False)
-
-            st.divider()
-            st.markdown("<p class='section-header'>What you are watching</p>", unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            c1.markdown("**Phase 1 — Standards retrieval**")
-            c1.markdown(
-                "The agent calls `query_knowledge` first. "
-                "The JSON response contains CLSI EP33 graph nodes with the delta-check thresholds and swap weights. "
-                "The server blocks triage until this call succeeds."
-            )
-            c2.markdown("**Phase 2 — Specimen triage (S100–S110)**")
-            c2.markdown(
-                "One `apply_autoverification` call per specimen. Each returns a verbose JSON blob with "
-                "contamination score, swap score, and decision. "
-                "Watch for: **S101, S107** (EDTA contamination HOLDs) · "
-                "**S105, S106** (swap pair, both held) · "
-                "**S110** (CKD patient — elevated K, correctly released)."
-            )
-            c3.markdown("**Phase 3 — Audit verification**")
-            c3.markdown(
-                "Final `get_audit_log` call retrieves the append-only session audit trail. "
-                "Confirms every tool call is timestamped, attributed, and specimen values are write-once. "
-                "This is the ALCOA+ evidence a CAP inspector would ask for."
-            )
-        else:
-            if not GCS_BUCKET:
-                st.warning(
-                    "Recording not available — set `GCS_BUCKET` environment variable "
-                    "and upload `recording.cast` to your GCS bucket.",
-                    icon="⚠️",
-                )
-            else:
-                st.warning(
-                    f"Could not fetch recording from `gs://{GCS_BUCKET}/{GCS_RECORDING_OBJECT}`. "
-                    "Check service account permissions.",
-                    icon="⚠️",
-                )
 
 
 # ===========================================================================
