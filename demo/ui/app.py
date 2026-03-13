@@ -677,7 +677,7 @@ with tab_replay:
             elif step["decision"] == "RELEASE":
                 badge = "<span class='badge-release'>RELEASE</span>"
             else:
-                badge = ""
+                badge = "<span></span>"  # placeholder — keeps flex row intact, prevents markdown blank-line injection
 
             meta = step["scores"] or step["result"] or ""
             meta_html = f"<div class='step-meta'>{meta}</div>" if meta else ""
@@ -713,7 +713,7 @@ with tab_replay:
               const url  = URL.createObjectURL(blob);
               AsciinemaPlayer.create(url, document.getElementById('player'), {{
                 cols: 120,
-                rows: 35,
+                rows: 26,
                 autoPlay: false,
                 loop: false,
                 speed: 1.5,
