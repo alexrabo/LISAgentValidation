@@ -49,6 +49,11 @@
         "display_name": "Delta Check Divisor (SD)",
         "verdict": "graph-derived",
         "within_tolerance": true
+      },
+      {
+        "display_name": "Swap Glucose Analyte Weight",
+        "verdict": "graph-derived",
+        "within_tolerance": true
       }
     ]
   }

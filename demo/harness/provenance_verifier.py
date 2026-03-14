@@ -12,18 +12,31 @@ import json
 
 
 # (workflow_param, kg_node, kg_field, tolerance, display_name)
-# workflow_param is the key the agent writes in workflow.json / WorkflowParams MCP field.
+# workflow_param supports dot-notation for nested workflow keys (e.g.
+# "swap_detection.analyte_weights.Glucose").
 # display_name is the lab-standard term shown in reports and UI.
 # Note: delta_check_sd_threshold maps to triage.py's internal key zscore_threshold —
 # see _build_workflow() in apply_autoverification.py for the explicit mapping.
 EXPECTED_PARAMS = [
-    ("contamination_hold_threshold", "decision_policy", "contamination_hold_threshold", 0.05,
+    ("contamination_hold_threshold",          "decision_policy", "contamination_hold_threshold",  0.05,
      "Contamination Hold Threshold"),
-    ("swap_hold_threshold",          "decision_policy", "swap_hold_threshold",          0.05,
+    ("swap_hold_threshold",                   "decision_policy", "swap_hold_threshold",            0.05,
      "Identity Swap Hold Threshold"),
-    ("delta_check_sd_threshold",     "K_acute_rise",    "threshold_SD",                 0.20,
-     "Delta Check Divisor (SD)"),    # CLSI EP33 Section 4.3 Table 2
+    ("delta_check_sd_threshold",              "K_acute_rise",    "threshold_SD",                   0.20,
+     "Delta Check Divisor (SD)"),             # CLSI EP33 Section 4.3 Table 2
+    ("swap_detection.analyte_weights.Glucose","specimen_swap",   "glucose_recommended_weight",     0.05,
+     "Swap Glucose Analyte Weight"),          # CLSI EP33 — highest inter-patient variability
 ]
+
+
+def _get_workflow_value(workflow: dict, param_path: str):
+    """Resolve a dot-separated path into a nested workflow dict. Returns None if absent."""
+    current = workflow
+    for part in param_path.split("."):
+        if not isinstance(current, dict) or part not in current:
+            return None
+        current = current[part]
+    return current
 
 
 def verify_provenance(workflow_json_path: str, knowledge_json_path: str) -> dict:
@@ -41,8 +54,9 @@ def verify_provenance(workflow_json_path: str, knowledge_json_path: str) -> dict
 
     for workflow_param, kg_node, kg_field, tolerance, display_name in EXPECTED_PARAMS:
         expected_value = kg["nodes"][kg_node][kg_field]
+        agent_value = _get_workflow_value(workflow, workflow_param)
 
-        if workflow_param not in workflow:
+        if agent_value is None:
             all_graph_derived = False
             parameters.append({
                 "param": workflow_param,
@@ -56,7 +70,6 @@ def verify_provenance(workflow_json_path: str, knowledge_json_path: str) -> dict
             })
             continue
 
-        agent_value = workflow[workflow_param]
         within = abs(agent_value - expected_value) <= tolerance
         verdict = "graph-derived" if within else "data-fitted"
         if not within:
