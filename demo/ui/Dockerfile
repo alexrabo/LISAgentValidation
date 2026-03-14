@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY verified_run_results.json .
 COPY verified_run_decisions.json .
+COPY trajectory.json .
 
 # Cloud Run sets PORT; Streamlit must bind to it
 ENV PORT=8080

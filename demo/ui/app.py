@@ -13,8 +13,9 @@ import streamlit as st
 # Constants
 # ---------------------------------------------------------------------------
 UI_DIR = Path(__file__).parent
-RESULTS_FILE = UI_DIR / "verified_run_results.json"
-DECISIONS_FILE = UI_DIR / "verified_run_decisions.json"
+RESULTS_FILE    = UI_DIR / "verified_run_results.json"
+DECISIONS_FILE  = UI_DIR / "verified_run_decisions.json"
+TRAJECTORY_FILE = UI_DIR / "trajectory.json"
 
 GCS_BUCKET = os.environ.get("GCS_BUCKET", "")
 GCS_RECORDING_OBJECT = os.environ.get("GCS_RECORDING_OBJECT", "recording.cast")
@@ -114,43 +115,39 @@ def load_decisions() -> list[dict]:
     return data["specimens"]
 
 
+@st.cache_data
+def load_trajectory() -> list[dict]:
+    """Load agent steps from trajectory.json committed to the image."""
+    try:
+        t = json.loads(TRAJECTORY_FILE.read_text())
+        return [s for s in t["steps"] if s["source"] == "agent"]
+    except Exception:
+        return []
+
+
 @st.cache_data(ttl=300)
 def get_cast_markers(cast_content: str) -> dict:
-    """Find real timestamps for 8 recording segments by searching cast output."""
+    """Derive recording-relative timestamps from trajectory step timestamps.
+    Falls back to empty dict if trajectory or cast epoch unavailable."""
     import json as _json
-    lines = cast_content.strip().split('\n')
-
-    # Search patterns in the order they appear in the recording
-    PATTERNS = [
-        "ls -la",                       # 1 — environment exploration
-        "specimen_swap",                # 2 — KG swap paths
-        "glucose_recommended_weight",   # 3 — KG analyte weights
-        "hold_threshold",               # 4 — KG thresholds
-        "workflow.json",                # 5 — first workflow write
-        "/app/triage",                  # 6 — triage run
-        "decisions.json",               # 7 — review / final
-    ]
-
-    markers = {"0": 0.0}   # segment 0 always starts at t=0
-    next_pat = 0
-    accum = ""
-
-    for line in lines[1:]:
-        if next_pat >= len(PATTERNS):
-            break
-        try:
-            t, etype, data = _json.loads(line)
-            if etype != "o":
-                continue
-            accum += data
-            if PATTERNS[next_pat] in accum:
-                markers[str(next_pat + 1)] = round(t, 2)
-                accum = ""
-                next_pat += 1
-        except Exception:
-            continue
-
-    return markers
+    from datetime import datetime
+    try:
+        header = _json.loads(cast_content.split('\n')[0])
+        cast_epoch = header.get('timestamp')
+        if not cast_epoch:
+            return {}
+        agent_steps = load_trajectory()
+        if not agent_steps:
+            return {}
+        markers = {"0": 0.0}
+        for i, step in enumerate(agent_steps):
+            ts = datetime.fromisoformat(step['timestamp'].replace('Z', '+00:00'))
+            rel = round(ts.timestamp() - cast_epoch, 1)
+            if rel > 0:
+                markers[str(i + 1)] = rel
+        return markers
+    except Exception:
+        return {}
 
 
 @st.cache_data(ttl=300)
@@ -809,62 +806,71 @@ with tab_scatter:
 # TAB 3 — Agent Replay
 # ===========================================================================
 REPLAY_STEPS = [
-    # ── RULE DERIVATION ──────────────────────────────────────────────
+    # ── RULE DERIVATION ─────────────────────────────────────────────────
     {
         "group": "rule_derivation",
-        "title": "Session setup",
-        "command": "clear",
-        "detail": "Agent session starts inside the Docker container. The triage engine, specimen fixtures, and clinical knowledge graph are pre-loaded at /app.",
+        "title": "Step 1 — Initial exploration",
+        "command": "ls -la /app  ·  cat workflow.json  ·  cat clinical_knowledge.json  ·  /app/triage",
+        "detail": (
+            "Agent reads the flawed `workflow.json` (absolute thresholds only, swap disabled) "
+            "then reads the full knowledge graph. Runs a first triage pass — all specimens "
+            "release because contamination rules are wrong. Writes a corrected first version: "
+            "prior-relative EDTA signature, swap detection enabled."
+        ),
+        "kg_nodes": ["EDTA_contamination", "K_acute_rise", "Ca_acute_fall"],
         "flag": None,
     },
     {
         "group": "rule_derivation",
-        "title": "Environment exploration",
-        "command": "ls -la /app",
-        "detail": "Agent inventories available files: clinical_knowledge.json (CLSI EP33 graph), visible_batch_nolabels.json (11 specimens), workflow.json (default config). Reads the task objective.",
+        "title": "Step 2 — Fixing contamination thresholds",
+        "command": "grep paths  ·  grep specimen_swap  ·  cat clinical_knowledge.json",
+        "detail": (
+            "Agent identifies two errors in its first attempt: "
+            "Ca_delta_max should be −2.5 SD (it set −3.0), and fallback_Ca_max must be "
+            "7.2 mg/dL (it used 1.80 — wrong units). "
+            "Reads `Ca_acute_fall` and `new_patient_fallback` nodes. Corrects both and re-runs triage."
+        ),
+        "kg_nodes": ["Ca_acute_fall", "new_patient_fallback", "contamination_detection"],
         "flag": None,
     },
     {
         "group": "rule_derivation",
-        "title": "KG — swap detection paths",
-        "command": 'grep "specimen_swap" clinical_knowledge.json',
-        "detail": "Agent queries the knowledge graph for swap detection parameters: pairwise comparison algorithm, discriminating analytes, and the role of Glucose as the strongest identity discriminator.",
+        "title": "Step 3 — Deriving exact swap weights",
+        "command": "grep glucose_recommended_weight  ·  grep other_analytes_weight  ·  grep hold_threshold",
+        "detail": (
+            "Agent extracts exact values from `specimen_swap` and `decision_policy` KG nodes: "
+            "Glucose weight = 3.0 (highest inter-patient variability), all other analytes = 1.0, "
+            "swap_hold_threshold = 0.3 (must be < 1.0). "
+            "Writes corrected workflow — triage now correctly HOLDs S105 and S106 as identity swap pair."
+        ),
+        "kg_nodes": ["specimen_swap", "glucose_recommended_weight", "decision_policy"],
         "flag": None,
     },
-    {
-        "group": "rule_derivation",
-        "title": "KG — analyte weights",
-        "command": 'grep "glucose_recommended_weight"',
-        "detail": "Agent extracts the CLSI EP33-specified weight for Glucose in swap scoring. High inter-patient, low intra-patient variability makes it the strongest discriminator for identity verification.",
-        "flag": None,
-    },
-    {
-        "group": "rule_derivation",
-        "title": "KG — hold/release thresholds",
-        "command": 'grep "hold_threshold"',
-        "detail": "Agent reads contamination_hold_threshold and swap_hold_threshold from the decision_policy node. These values come from the published standard — not fitted to the visible specimens.",
-        "flag": None,
-    },
-    {
-        "group": "rule_derivation",
-        "title": "Writes workflow.json",
-        "command": "cat > /app/workflow.json",
-        "detail": "Agent writes the triage configuration using values derived from the knowledge graph: delta_check_threshold, contamination signatures with fallback rules, swap analyte weights, and decision thresholds. No hardcoded values.",
-        "flag": None,
-    },
-    # ── DECISIONS REACHED ────────────────────────────────────────────
+    # ── DECISIONS REACHED ────────────────────────────────────────────────
     {
         "group": "decisions",
-        "title": "Runs triage — all 11 specimens",
-        "command": "/app/triage --batch visible_batch_nolabels.json",
-        "detail": "Triage engine processes S100–S110 in one pass using the KG-derived workflow. S101, S107 → HOLD (EDTA contamination). S105, S106 → HOLD (identity swap pair). S100, S102–S104, S108–S110 → RELEASE. S110 (CKD) correctly released despite elevated K.",
+        "title": "Step 4 — Final workflow and correct triage",
+        "command": "cat > /app/workflow.json  ·  python3 validate JSON  ·  /app/triage  ·  cat decisions.json",
+        "detail": (
+            "Agent finalises `workflow.json` with all KG-derived values: "
+            "K_delta_min 3.0 SD, Ca_delta_max −2.5 SD, fallback K ≥ 6.5 mmol/L, "
+            "fallback Ca ≤ 7.2 mg/dL, Glucose weight 3.0, contamination threshold 0.5, swap threshold 0.3. "
+            "Triage result: S101, S107 → HOLD (contamination) · S105, S106 → HOLD (swap) · "
+            "S100, S102–S104, S108–S110 → RELEASE · S110 (CKD) correctly released."
+        ),
+        "kg_nodes": ["contamination_hold_threshold", "swap_hold_threshold"],
         "flag": "decisions",
     },
     {
         "group": "decisions",
-        "title": "Reviews results and finalises",
-        "command": "cat decisions.json / final workflow",
-        "detail": "Agent inspects triage output, confirms HOLDs are clinically justified, refines the workflow configuration, and produces the final decisions.json. Evaluation: F1 1.00, unsafe releases 0.",
+        "title": "Step 5 — Task confirmed complete",
+        "command": "mark_task_complete",
+        "detail": (
+            "Agent confirms task complete. All parameters derived from the CLSI EP33 knowledge graph — "
+            "no values fitted to the visible batch specimens. "
+            "Final score: F1 1.00 · Unsafe releases 0 · Reward 1.0 · Total cost $0.12."
+        ),
+        "kg_nodes": [],
         "flag": "decisions",
     },
 ]
@@ -919,14 +925,25 @@ with tab_replay:
                 f'margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
                 f'{step["command"]}</div>'
             )
+            kg_nodes = step.get("kg_nodes") or []
+            kg_html = "".join(
+                f'<span style="background:#EFF6FF;color:#3B82F6;border-radius:3px;'
+                f'padding:1px 6px;font-size:0.63rem;margin-right:3px;font-family:monospace">'
+                f'{n}</span>'
+                for n in kg_nodes
+            )
+            kg_div = (
+                f'<div style="margin-top:5px">{kg_html}</div>' if kg_html else ""
+            )
             cards_html.append(
                 f'<div class="n-card" data-step="{idx}" style="'
                 f'border:1px solid #E5E7EB;border-left:4px solid {border};border-radius:6px;'
                 f'padding:8px 10px;margin-bottom:6px;background:{bg_card};'
                 f'transition:background 0.25s,box-shadow 0.25s">'
                 f'<div style="font-size:0.80rem;font-weight:600;color:#111827">'
-                f'#{idx+1}&nbsp;&nbsp;{step["title"]}</div>'
+                f'{step["title"]}</div>'
                 f'{cmd_div}'
+                f'{kg_div}'
                 f'<div style="font-size:0.75rem;color:#4B5563;margin-top:5px;line-height:1.45">'
                 f'{step["detail"]}</div>'
                 f'</div>'
@@ -964,8 +981,8 @@ with tab_replay:
             'var lastActive=-1;'
             'setInterval(function(){'
             '  var t=0;try{t=player.getCurrentTime();}catch(e){}'
-            '  var active=0;'
-            '  for(var i=0;i<8;i++){if(MARKERS[String(i)]!==undefined&&t>=MARKERS[String(i)])active=i;}'
+            '  var active=-1;'
+            '  for(var i=1;i<=5;i++){if(MARKERS[String(i)]!==undefined&&t>=MARKERS[String(i)])active=i-1;}'
             '  if(active===lastActive)return;'
             '  lastActive=active;'
             '  document.querySelectorAll(".n-card").forEach(function(c,i){'
@@ -1003,10 +1020,13 @@ with tab_replay:
                 st.markdown(f"<p class='section-header' style='margin-top:1rem'>{icon} {label}</p>", unsafe_allow_html=True)
                 current_group = group
             flag = step.get("flag") or ""
+            kg = " · ".join(step.get("kg_nodes") or [])
+            kg_line = f"<div style='font-size:0.70rem;color:#3B82F6;margin-top:3px'>{kg}</div>" if kg else ""
             st.markdown(
                 f'<div class="step-card phase-triage {flag}">'
-                f'<div style="font-size:0.80rem;font-weight:600;color:#111827">#{i}&nbsp;&nbsp;{step["title"]}</div>'
+                f'<div style="font-size:0.80rem;font-weight:600;color:#111827">{step["title"]}</div>'
                 f'<div style="font-family:monospace;font-size:0.70rem;color:#9CA3AF;margin-top:2px">{step["command"]}</div>'
+                f'{kg_line}'
                 f'<div class="step-detail">{step["detail"]}</div></div>',
                 unsafe_allow_html=True,
             )
