@@ -1273,6 +1273,8 @@ def page_demo():
             component_html = (
                 '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>'
                 '<style>'
+                '.n-card{opacity:0;transform:translateX(14px);transition:opacity 0.4s ease,transform 0.4s ease;pointer-events:none}'
+                '.n-card.revealed{opacity:1;transform:translateX(0);pointer-events:auto}'
                 '.n-card.active{background:#EFF6FF!important;border-left-color:#3B82F6!important;box-shadow:0 0 0 1px #BFDBFE}'
                 '.n-card.active .snap-link{opacity:1!important;font-weight:700!important;color:#1D4ED8!important;font-size:0.73rem!important}'
                 '</style>'
@@ -1309,6 +1311,7 @@ def page_demo():
                 '    document.getElementById("resume-bar").style.display="flex";'
                 '  }'
                 '  document.querySelectorAll(".n-card").forEach(function(c,i){'
+                '    if(i<=active)c.classList.add("revealed");'
                 '    if(i===active){c.classList.add("active");c.scrollIntoView({behavior:"smooth",block:"nearest"});}'
                 '    else{c.classList.remove("active");}'
                 '  });'
