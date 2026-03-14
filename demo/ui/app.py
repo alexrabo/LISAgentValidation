@@ -260,6 +260,10 @@ def _build_snapshot_html(sv: dict, why: str) -> str:
         '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;'
         'background:#F1F5F9;border:1px solid #CBD5E1;margin-right:3px"></span>normal'
         '</div>'
+        '<div style="margin-top:8px;font-size:0.62rem;color:#9CA3AF;'
+        'border-top:1px solid #F1F5F9;padding-top:7px;line-height:1.5">'
+        'Final outcomes<br>&#8594; Results Dashboard'
+        '</div>'
         '</div>'   # end specimens column
     )
     p.append('</div>')  # end two-column
@@ -1207,16 +1211,27 @@ def page_demo():
                     f'{annotation_div}'
                     f'{kg_div}'
                     f'<div style="text-align:right;margin-top:6px">'
-                    f'<a href="#" onclick="openStepModal({idx});return false;" '
+                    f'<a class="snap-link" href="#" onclick="openStepModal({idx});return false;" '
                     f'style="font-size:0.68rem;color:#3B82F6;text-decoration:none;'
-                    f'opacity:0.75;transition:opacity 0.15s" '
+                    f'opacity:0.75;transition:opacity 0.15s,font-weight 0.15s" '
                     f'onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">'
                     f'View full snapshot &#8594;</a>'
                     f'</div>'
                     f'</div>'
                 )
 
-            narration_html = "\n".join(cards_html)
+                resume_bar_html = (
+                '<div id="resume-bar" style="display:none;background:#DBEAFE;border-radius:6px;'
+                'padding:6px 10px;margin-bottom:8px;align-items:center;gap:8px;'
+                'position:sticky;top:0;z-index:10">'
+                '<span style="font-size:0.68rem;color:#1E40AF;flex:1">'
+                '&#9646;&nbsp;Paused — review this step, then</span>'
+                '<button onclick="resumePlayer()" style="font-size:0.68rem;padding:3px 12px;'
+                'background:#3B82F6;color:white;border:none;border-radius:4px;cursor:pointer;'
+                'white-space:nowrap">&#9654;&nbsp;Resume</button>'
+                '</div>'
+            )
+            narration_html = resume_bar_html + "\n" + "\n".join(cards_html)
 
             snapshots_json = json.dumps([
                 {
@@ -1259,6 +1274,7 @@ def page_demo():
                 '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css"/>'
                 '<style>'
                 '.n-card.active{background:#EFF6FF!important;border-left-color:#3B82F6!important;box-shadow:0 0 0 1px #BFDBFE}'
+                '.n-card.active .snap-link{opacity:1!important;font-weight:700!important;color:#1D4ED8!important;font-size:0.73rem!important}'
                 '</style>'
                 '<div style="display:flex;gap:14px;height:560px">'
                 '  <div style="flex:3;min-width:0;display:flex;flex-direction:column">'
@@ -1288,11 +1304,19 @@ def page_demo():
                 '  for(var i=1;i<=5;i++){if(MARKERS[String(i)]!==undefined&&t>=MARKERS[String(i)])active=i-1;}'
                 '  if(active===lastActive)return;'
                 '  lastActive=active;'
+                '  if(active>=0){'
+                '    try{player.pause();}catch(e){}'
+                '    document.getElementById("resume-bar").style.display="flex";'
+                '  }'
                 '  document.querySelectorAll(".n-card").forEach(function(c,i){'
                 '    if(i===active){c.classList.add("active");c.scrollIntoView({behavior:"smooth",block:"nearest"});}'
                 '    else{c.classList.remove("active");}'
                 '  });'
                 '},250);'
+                'function resumePlayer(){'
+                '  try{player.play();}catch(e){}'
+                '  document.getElementById("resume-bar").style.display="none";'
+                '}'
                 'function openStepModal(i){'
                 '  var s=SNAPSHOTS[i];'
                 '  var kgBadges=s.kg_nodes.map(function(n){'
