@@ -176,11 +176,11 @@ with st.sidebar:
     st.caption("CLSI EP33 · Two-layer evaluation framework")
     st.divider()
 
-    mode = st.radio(
-        "Mode",
-        ["Demo", "Harbor"],
+    page = st.radio(
+        "",
+        ["📊 Demo", "ℹ️ About"],
         index=0,
-        help="Demo: pre-computed results from a verified run.\nHarbor: run via TerminalBench.",
+        label_visibility="collapsed",
     )
 
     st.divider()
@@ -270,14 +270,260 @@ decisions = load_decisions()
 agg = results["metrics"]["aggregate"]
 provenance = results["provenance"]
 
+# ===========================================================================
+# ABOUT PAGE — shown when page == "ℹ️ About"; st.stop() prevents tab render
+# ===========================================================================
+if page == "ℹ️ About":
+
+    st.markdown("## Welcome to the LIS AI Validation Demo")
+    st.markdown("""
+Clinical laboratories process thousands of specimens every day. Before any result reaches
+a physician, it passes through **autoverification** — an automated review that checks
+whether the result is clinically plausible and safe to release.
+
+This demo shows an AI agent performing autoverification on a batch of 11 specimens.
+It is evaluated against two questions every lab director must answer before deploying AI:
+
+1. **Did it make the right call on every specimen?** — *Decision quality (Layer 1)*
+2. **Can you prove it derived its rules from published clinical standards?** — *Reasoning provenance (Layer 2)*
+
+Most validation frameworks stop at question 1. This framework evaluates both, independently.
+The agent must not only get the right answers — it must get them *for the right reasons*.
+""")
+
+    st.divider()
+
+    # --- Two problems ---
+    st.markdown("## The two problems the agent must catch")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("### 🧪 EDTA Contamination")
+        st.markdown("""
+EDTA is the anticoagulant in purple-top CBC tubes. When it contaminates a chemistry specimen
+it artificially **raises potassium** and **depresses calcium**. A physician seeing the result
+may treat aggressively for a critical condition the patient does not have.
+
+The agent detects this using a **patient-relative delta check** — comparing the result against
+the patient's *own* prior values, not a population range. This matters: a CKD patient may
+have chronically elevated potassium that is normal *for them*. A population threshold flags
+it as contamination. A delta check correctly releases it.
+""")
+    with col_b:
+        st.markdown("### 🔀 Identity Swap")
+        st.markdown("""
+A swap occurs when two specimens are collected correctly but their tube labels are transposed.
+Each individual result looks physiologically plausible — the error only appears when you
+compare *across* specimens: patient A's glucose is reported under patient B's name.
+
+The agent detects this through **pairwise comparison**: for every pair of specimens, it checks
+whether swapping their patient assignments produces a better fit to both patients' prior
+histories. A swap score near 1.0 means the swap hypothesis explains the data far better than
+the current label assignment. Both specimens in the pair are held for review.
+""")
+
+    st.divider()
+
+    # --- How the agent reasons ---
+    st.markdown("## How the agent reasons")
+    st.markdown(
+        "Instead of hardcoded thresholds, the agent reads a **clinical knowledge graph** "
+        "derived from CLSI EP33. Each parameter lives as a named node — the agent traverses "
+        "the graph, derives its values, then applies them. An independent verifier checks the "
+        "agent's workflow against the same graph after the run. This is what makes the "
+        "decision **auditable**, not just accurate."
+    )
+    st.graphviz_chart("""
+        digraph G {
+            rankdir=LR
+            fontname="Arial"
+            node [fontname="Arial" fontsize=11 margin="0.2,0.1"]
+            edge [fontname="Arial" fontsize=10]
+            subgraph cluster_kg {
+                label="Clinical Knowledge Graph  (CLSI EP33)"
+                style=filled fillcolor="#EFF6FF" color="#3B82F6" fontcolor="#1E3A5F" fontsize=11
+                N1 [label="K acute rise\\nthreshold"  shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
+                N2 [label="Ca acute fall\\nthreshold" shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
+                N3 [label="Swap detection\\nweights"  shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
+                N4 [label="Decision\\npolicy"         shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
+            }
+            Agent  [label="AI Agent"            shape=box     style=filled fillcolor="#DCFCE7" color="#16A34A"]
+            WF     [label="workflow.json"        shape=note    style=filled fillcolor="#FFFBEB" color="#D97706"]
+            Spec   [label="Specimens S100–S110"  shape=cylinder style=filled fillcolor="#F3F4F6" color="#6B7280"]
+            DE     [label="Decision Engine"      shape=diamond style=filled fillcolor="#F9FAFB" color="#374151"]
+            Out    [label="HOLD / RELEASE"       shape=box     style=filled fillcolor="#FEE2E2" color="#EF4444"]
+            PV     [label="Provenance Verifier"  shape=box     style=filled fillcolor="#FFF7ED" color="#F97316"]
+            Report [label="Validation Report"    shape=box     style=filled fillcolor="#FFF7ED" color="#F97316"]
+            subgraph cluster_phase2 {
+                label="Phase 2 — Allotrope ADM" style=dashed color="#7C3AED" fontcolor="#7C3AED" fontsize=10
+                ADM  [label="Analyser\\n(ADM)" shape=box style="filled,dashed" fillcolor="#F5F3FF" color="#7C3AED" fontcolor="#4C1D95"]
+                ADMP [label="container_type\\ninstrument_id\\nreagent_lot" shape=note style="filled,dashed" fillcolor="#F5F3FF" color="#7C3AED" fontsize=9 fontcolor="#4C1D95"]
+            }
+            { rank=same; Spec; DE }
+            { rank=same; ADM; ADMP }
+            ADM -> ADMP [style=dashed color="#7C3AED"]
+            ADMP -> N1  [label="enriches graph" style=dashed color="#7C3AED" fontcolor="#7C3AED"]
+            ADM  -> Spec [style=dashed color="#7C3AED" label="ADM document"]
+            N1 -> Agent [label="agent reads" style=dashed color="#3B82F6"]
+            N2 -> Agent [style=dashed color="#3B82F6"]
+            N3 -> Agent [style=dashed color="#3B82F6"]
+            N4 -> Agent [style=dashed color="#3B82F6"]
+            Agent -> WF [label="derives params"]
+            WF -> DE
+            Spec -> DE
+            DE -> Out [label="scores"]
+            N1 -> PV [label="independent check" style=dashed color="#F97316"]
+            N4 -> PV [style=dashed color="#F97316"]
+            WF -> PV
+            PV -> Report [label="Layer 2 pass/fail"]
+        }
+    """, use_container_width=True)
+
+    st.divider()
+
+    # --- Tab guide ---
+    st.markdown("## Your guide to the four tabs")
+    st.markdown("Each tab answers a different question. Start with Results Dashboard, then explore.")
+    c1, c2 = st.columns(2)
+    c3, c4 = st.columns(2)
+    with c1:
+        with st.container(border=True):
+            st.markdown("#### 📋 Results Dashboard")
+            st.markdown(
+                "The validated outcome. Four metric cards show whether the agent passed, "
+                "per-specimen decisions show each HOLD/RELEASE with its clinical reason, "
+                "and Layer 2 provenance shows where the thresholds came from."
+            )
+            st.caption("→ Start here")
+    with c2:
+        with st.container(border=True):
+            st.markdown("#### 📊 Decision Space")
+            st.markdown(
+                "Every specimen plotted on contamination score (X) vs. identity swap score (Y). "
+                "The dashed lines are the KG-derived decision boundaries. See at a glance why "
+                "each specimen was held or released — and why S110 (CKD) sits at the origin."
+            )
+            st.caption("→ Best for visual explanation")
+    with c3:
+        with st.container(border=True):
+            st.markdown("#### ▶ Agent Replay")
+            st.markdown(
+                "A terminal recording of the agent solving the task, synchronized with "
+                "8 annotated narration cards. Watch the agent read the knowledge graph, "
+                "derive thresholds, write its configuration, and run triage."
+            )
+            st.caption("→ The provenance story in real time")
+    with c4:
+        with st.container(border=True):
+            st.markdown("#### 📖 Glossary")
+            st.markdown(
+                "Plain-English definitions of every clinical and statistical term used "
+                "in the demo — from delta check and CLSI EP33 to F1 score, ALCOA+, "
+                "and Allotrope ADM."
+            )
+            st.caption("→ Reference when a term is unfamiliar")
+
+    st.divider()
+
+    # --- Three runs ---
+    st.markdown("## Three independent runs, one benchmark")
+    st.markdown(
+        "The same task was evaluated three times by the same agent model. "
+        "All three scored **Reward 1.0** — every specimen correctly classified. "
+        "The Agent Replay tab shows run `HsPAVBJ`."
+    )
+    rc1, rc2, rc3 = st.columns(3)
+    rc1.metric("Run hJQzBJW", "4 steps · $0.08", "Reward 1.0 ✅",
+               help="Most efficient run — solved in fewest reasoning steps.")
+    rc2.metric("Run HsPAVBJ", "5 steps · $0.12", "Reward 1.0 ✅",
+               help="Featured run — recording shown in Agent Replay tab.")
+    rc3.metric("Run Zo4iCGU", "6 steps · $0.15", "Reward 1.0 ✅",
+               help="Most deliberate run — most intermediate KG queries.")
+    st.caption(
+        "Agent: GPT-5 via TerminalBench harness · Task: `lis-swap-contamination-triage` · "
+        "Date: 2026-02-21 · All runs used prior-relative delta check derived from CLSI EP33."
+    )
+
+    st.divider()
+
+    # --- Harbor ---
+    st.markdown("## Run it yourself — TerminalBench")
+    st.markdown(
+        "This benchmark is published on TerminalBench. You can evaluate any agent against "
+        "it with a single command. The agent receives the task description, the knowledge "
+        "graph, and the specimen batch — and must repair `workflow.json` to produce correct "
+        "HOLD/RELEASE decisions."
+    )
+    harbor_cmd = (
+        "harbor trials start \\\n"
+        "  -p lis-swap-contamination-triage \\\n"
+        "  -a claude-code \\\n"
+        "  -m anthropic/claude-sonnet-4-6"
+    )
+    st.code(harbor_cmd, language="bash")
+    harbor_available = subprocess.run(["which", "harbor"], capture_output=True).returncode == 0
+    if harbor_available:
+        if st.button("▶  Run trial now", type="primary"):
+            with st.spinner("Running Harbor trial…"):
+                result = subprocess.run(
+                    ["harbor", "trials", "start",
+                     "-p", "lis-swap-contamination-triage",
+                     "-a", "claude-code",
+                     "-m", "anthropic/claude-sonnet-4-6"],
+                    capture_output=True, text=True, timeout=600,
+                )
+            if result.returncode == 0:
+                st.success("Trial complete.")
+                st.code(result.stdout, language="text")
+            else:
+                st.error("Trial failed.")
+                st.code(result.stderr, language="text")
+    else:
+        st.info("`harbor` not found — install: `pip install harbor-cli`", icon="ℹ️")
+
+    st.divider()
+
+    # --- Why provenance matters ---
+    st.markdown("## Why Layer 2 — provenance verification — matters")
+    st.markdown("""
+An agent could pass Layer 1 simply by fitting its thresholds to the visible test specimens —
+essentially memorising the answers. It would score well on the visible batch but fail on
+patients it has never seen.
+
+**Layer 2 checks whether the agent read the standard.**
+
+After the run, the framework independently reads the `workflow.json` the agent wrote and
+compares each threshold against the value specified in the knowledge graph. If the agent
+derived its thresholds from the graph (within tolerance), it passes. If it arrived at
+different values — even values that happen to work on this batch — it fails Layer 2.
+
+This is the evidence a CAP inspector or CLIA surveyor asks for: not just *"did it work?"*
+but *"where did the rules come from, and can you show me?"*
+""")
+
+    st.divider()
+
+    # --- Allotrope ---
+    st.markdown("## Phase 2 — Allotrope ADM")
+    st.markdown(
+        "This demo seeds specimen data manually. In production, data arrives as "
+        "**Allotrope Foundation Data Model (ADM)** documents directly from analysers — "
+        "the emerging industry standard for structured instrument output. "
+        "ADM adds chain-of-custody fields (`container_type`, `instrument_id`, `reagent_lot`) "
+        "that become additional nodes in the knowledge graph's contamination reasoning path. "
+        "This demo is the decision framework. Allotrope ADM is the data layer that makes it production-grade."
+    )
+
+    st.stop()
+
+
 # ---------------------------------------------------------------------------
-# Tabs
+# Tabs (Demo mode only — About page calls st.stop() above)
 # ---------------------------------------------------------------------------
-tab_results, tab_scatter, tab_replay, tab_about = st.tabs([
+tab_results, tab_scatter, tab_replay, tab_glossary = st.tabs([
     "📋  Results Dashboard",
     "📊  Decision Space",
     "▶   Agent Replay",
-    "ℹ️  About this Demo",
+    "📖  Glossary",
 ])
 
 
@@ -285,6 +531,7 @@ tab_results, tab_scatter, tab_replay, tab_about = st.tabs([
 # TAB 1 — Results Dashboard
 # ===========================================================================
 with tab_results:
+    st.caption("Validation outcome — metric cards, per-specimen decisions with clinical explanations, and Layer 2 reasoning provenance.")
 
     # --- Header ---
     overall_pass = results["passed"]
@@ -445,6 +692,7 @@ with tab_results:
 # TAB 2 — Decision Space scatter
 # ===========================================================================
 with tab_scatter:
+    st.caption("Every specimen plotted on contamination score vs. swap score — see where the agent drew the line and why S110 (CKD) sits at the origin.")
 
     st.markdown("<p class='section-header'>Contamination score vs identity swap score — all specimens</p>", unsafe_allow_html=True)
     st.caption(
@@ -624,11 +872,9 @@ REPLAY_STEPS = [
 
 with tab_replay:
 
+    st.caption("Watch the agent derive rules from the knowledge graph and triage all 11 specimens — terminal recording synchronized with annotated decision steps.")
     st.markdown("<p class='section-header'>Agent terminal session — verified run</p>", unsafe_allow_html=True)
-    st.caption(
-        "Recording of Claude calling MCP tools against the LIMS server in real time. "
-        "Run ID: `lis-swap-contamination-triage__HsPAVBJ` · Reward: 1.0 · Cost: $0.12"
-    )
+    st.caption("Run ID: `lis-swap-contamination-triage__HsPAVBJ` · Reward: 1.0 · Cost: $0.12 · GPT-5")
     st.info("**Click inside the terminal for playback controls** — play/pause, progress bar, speed.", icon="▶")
 
     cast_content = fetch_recording_cast()
@@ -767,241 +1013,10 @@ with tab_replay:
 
 
 # ===========================================================================
-# TAB 4 — About this Demo
+# TAB 4 — Glossary
 # ===========================================================================
-with tab_about:
-
-    st.markdown("## What this demo shows")
-    st.markdown("""
-A clinical laboratory processes thousands of specimens every day. Before any result can be
-reported to a physician, it passes through **autoverification** — an automated review step
-that checks whether the result is clinically plausible and safe to release.
-
-This demo answers two questions that every lab director must be able to answer before
-deploying an AI autoverification agent:
-
-1. **Did it make the right call on every specimen?** (Decision quality)
-2. **Can you prove it derived its rules from published clinical standards — not from the test data?** (Reasoning provenance)
-
-Most validation frameworks stop at question 1. This framework evaluates both, independently.
-""")
-
-    st.divider()
-
-    # --- Why it matters ---
-    st.markdown("## The two problems it catches")
-
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown("### 🧪 EDTA Contamination")
-        st.markdown("""
-EDTA is the anticoagulant in purple-top collection tubes. It should never appear in a serum
-specimen. When it does — from a contaminated needle, an incorrectly labelled tube, or a
-processing error — it artificially **raises potassium** and **depresses calcium**.
-
-If this result is released, a physician sees apparent critical hyperkalemia and may treat
-aggressively for a condition the patient does not have. The specimen needs to be recollected,
-not reported.
-
-The agent identifies this by comparing each result against **the patient's own prior values**
-(delta check), not against population reference ranges. This matters: a CKD patient may have
-chronically elevated potassium that is normal *for them* — a population threshold would flag
-it as contamination. A patient-relative delta check correctly releases it.
-""")
-
-    with col_b:
-        st.markdown("### 🔀 Identity Swap")
-        st.markdown("""
-An identity swap occurs when two specimens are collected from the correct patients but their
-tube labels are transposed — specimen A gets patient B's label, and vice versa.
-
-The values in each tube are real and physiologically plausible. No single result looks
-obviously wrong. The error only becomes visible when you compare *across* specimens: patient A's
-glucose is reported to patient B, who has a completely different glucose history.
-
-The agent detects this through **pairwise comparison**: for every pair of specimens in a batch,
-it checks whether swapping their patient assignments would produce a better fit to both patients'
-prior histories. A swap score near 1.0 means the swap hypothesis explains the data far better
-than the current assignment. Both specimens in the pair are held.
-""")
-
-    st.divider()
-
-    # --- How the agent reasons — diagram ---
-    st.markdown("## How the agent reasons")
-    st.markdown(
-        "Instead of hardcoded thresholds, the agent reads a **clinical knowledge graph** "
-        "derived from CLSI EP33. Each decision parameter lives as a named node — the agent "
-        "traverses the graph, derives its values, then applies them to specimens. "
-        "An independent verifier checks the agent's workflow against the same graph after the run. "
-        "This is what makes the decision auditable, not just accurate."
-    )
-
-    st.graphviz_chart("""
-        digraph G {
-            rankdir=LR
-            fontname="Arial"
-            node [fontname="Arial" fontsize=11 margin="0.2,0.1"]
-            edge [fontname="Arial" fontsize=10]
-
-            subgraph cluster_kg {
-                label="Clinical Knowledge Graph  (CLSI EP33)"
-                style=filled
-                fillcolor="#EFF6FF"
-                color="#3B82F6"
-                fontcolor="#1E3A5F"
-                fontsize=11
-
-                N1 [label="K acute rise\\nthreshold"   shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
-                N2 [label="Ca acute fall\\nthreshold"  shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
-                N3 [label="Swap detection\\nweights"   shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
-                N4 [label="Decision\\npolicy"          shape=box style=filled fillcolor="#DBEAFE" color="#3B82F6"]
-            }
-
-            Agent    [label="AI Agent"             shape=box style=filled fillcolor="#DCFCE7" color="#16A34A"]
-            WF       [label="workflow.json"         shape=note style=filled fillcolor="#FFFBEB" color="#D97706"]
-            Spec     [label="Specimens\\nS100–S110" shape=cylinder style=filled fillcolor="#F3F4F6" color="#6B7280"]
-            DE       [label="Decision\\nEngine"     shape=diamond style=filled fillcolor="#F9FAFB" color="#374151"]
-            Out      [label="HOLD / RELEASE"        shape=box style=filled fillcolor="#FEE2E2" color="#EF4444"]
-            PV       [label="Provenance\\nVerifier" shape=box style=filled fillcolor="#FFF7ED" color="#F97316"]
-            Report   [label="Validation\\nReport"   shape=box style=filled fillcolor="#FFF7ED" color="#F97316"]
-
-            subgraph cluster_phase2 {
-                label="Phase 2"
-                style=dashed
-                color="#7C3AED"
-                fontcolor="#7C3AED"
-                fontsize=10
-
-                ADM  [label="Analyser\\n(Allotrope ADM)" shape=box style="filled,dashed" fillcolor="#F5F3FF" color="#7C3AED" fontcolor="#4C1D95"]
-                ADMP [label="container_type\\ninstrument_id\\nreagent_lot"  shape=note style="filled,dashed" fillcolor="#F5F3FF" color="#7C3AED" fontsize=9 fontcolor="#4C1D95"]
-            }
-
-            { rank=same; Spec; DE }
-            { rank=same; ADM; ADMP }
-
-            ADM -> ADMP [style=dashed color="#7C3AED"]
-            ADMP -> N1  [label="enriches\\ngraph nodes" style=dashed color="#7C3AED" fontcolor="#7C3AED"]
-            ADM  -> Spec [style=dashed color="#7C3AED" label="ADM\\ndocument"]
-
-            N1 -> Agent [label="agent reads" style=dashed color="#3B82F6"]
-            N2 -> Agent [style=dashed color="#3B82F6"]
-            N3 -> Agent [style=dashed color="#3B82F6"]
-            N4 -> Agent [style=dashed color="#3B82F6"]
-
-            Agent -> WF  [label="derives params"]
-            WF    -> DE
-            Spec  -> DE
-            DE    -> Out [label="scores"]
-
-            N1 -> PV [label="independent\\ncheck" style=dashed color="#F97316"]
-            N4 -> PV [style=dashed color="#F97316"]
-            WF -> PV
-            PV -> Report [label="Layer 2\\npass / fail"]
-        }
-    """, use_container_width=True)
-
-    st.divider()
-
-    # --- Allotrope ---
-    st.markdown("## Phase 2 — Allotrope ADM")
-    st.markdown(
-        "This demo seeds specimen data manually. In production, data arrives as "
-        "**Allotrope Foundation Data Model (ADM)** documents directly from analysers — "
-        "the emerging industry standard for structured instrument output. "
-        "ADM adds chain-of-custody fields (`container_type`, `instrument_id`, `reagent_lot`) "
-        "that become additional nodes in the knowledge graph's contamination reasoning path. "
-        "An EDTA tube flagged at the container level, confirmed by delta check, and traced to "
-        "a specific instrument lot is a qualitatively stronger clinical finding than a value "
-        "anomaly with no provenance. This demo is the decision framework. Allotrope ADM is "
-        "the data layer that makes it production-grade."
-    )
-
-    st.divider()
-
-    # --- Why Layer 2 matters ---
-    st.markdown("## Why provenance verification matters")
-    st.markdown("""
-An agent could pass the decision quality tests simply by fitting its thresholds to the test
-specimens — essentially memorising the answer. This would score well on the visible batch but
-fail on patients it has never seen.
-
-**Layer 2 checks whether the agent read the standard.**
-
-The agent is given access to a clinical knowledge graph derived from **CLSI EP33** — the
-published guideline for autoverification systems. After the run, the framework independently
-reads the `workflow.json` the agent wrote and compares each threshold against the value
-specified in the knowledge graph. If the agent derived its thresholds from the graph (within
-tolerance), it passes. If it arrived at different values — even values that happen to work on
-the test batch — it fails Layer 2.
-
-This is the validation evidence a CAP inspector or CLIA surveyor would ask for: not just
-"did it work?" but "where did the rules come from, and can you show me?"
-""")
-
-    st.divider()
-
-    # --- Tab guide ---
-    st.markdown("## Guide to each tab")
-
-    with st.expander("📋  Results Dashboard", expanded=True):
-        st.markdown("""
-**Start here.** This tab gives you the complete validation summary.
-
-- **Metric cards** (top) — the four numbers that determine whether the agent passes validation.
-  Hover over the **?** on each card for a plain-English explanation of what it measures and why.
-- **Per-specimen decisions table** — every specimen in the batch, with the agent's decision,
-  the underlying scores, and for HOLD decisions, the one-line clinical reason.
-- **Hold explanations** — expandable cards below the table with the full clinical narrative
-  for each held specimen: which analytes deviated, by how many standard deviations, and why
-  that pattern points to contamination or a swap rather than a clinical condition.
-- **Reasoning provenance** — Layer 2 results. Shows whether each threshold in the agent's
-  workflow was graph-derived (from CLSI EP33) or arrived at by other means.
-- **CKD interference guard** — a callout for specimen S110, the critical edge case that
-  separates a naive absolute-threshold agent from one that reads the standard correctly.
-""")
-
-    with st.expander("📊  Decision Space"):
-        st.markdown("""
-**The visual summary of how the agent sees the batch.**
-
-Each specimen is plotted on two axes:
-- **X axis — Contamination score**: how strongly the analyte pattern resembles EDTA contamination
-  (elevated K, depressed Ca, both relative to the patient's own prior values)
-- **Y axis — Identity swap score**: how much better the data fits if this specimen's patient
-  assignment is swapped with another specimen in the batch
-
-The dashed lines are the decision boundaries derived from the clinical knowledge graph.
-Specimens in the shaded red regions were held; specimens in the white region were released.
-
-**What to look for:**
-- Contamination specimens (orange diamonds) cluster near the top of the X axis — high
-  contamination score, near-zero swap score
-- Swap specimens (purple stars) cluster near the top of the Y axis — high swap score
-- S110 (CKD patient) sits at the origin — zero on both axes, correctly in the release zone
-  despite having elevated potassium
-""")
-
-    with st.expander("▶   Agent Replay"):
-        st.markdown("""
-**Two views of the same verified run.**
-
-Use the toggle at the top of the tab to switch between:
-
-- **Step view** — 13 annotated tool-call cards, one per agent action, with clinical context for
-  each decision. Clean at any zoom level; every frame is screenshot-ready. Start here for presentations.
-- **Terminal recording** — the raw asciinema session from the actual run. Proves the agent
-  operated in real time against a live LIMS server. Use this to show the raw evidence.
-
-The tool call sequence is enforced by the server: `apply_autoverification` returns an error
-until `query_knowledge` has been called. The agent cannot skip the standards-reading step.
-
-**Run ID:** `lis-swap-contamination-triage__HsPAVBJ` · **Reward:** 1.0 · **Cost:** $0.12
-""")
-
-    st.divider()
-
-    # --- Glossary ---
+with tab_glossary:
+    st.caption("Plain-English definitions of every clinical and statistical term used in the demo.")
     st.markdown("## Glossary")
 
     terms = [
@@ -1080,49 +1095,3 @@ until `query_knowledge` has been called. The agent cannot skip the standards-rea
             st.markdown(definition)
 
 
-# ===========================================================================
-# Harbor mode overlay
-# ===========================================================================
-if mode == "Harbor":
-    st.divider()
-    st.markdown("### Harbor — TerminalBench task runner")
-    st.caption(
-        "This task is published as a TerminalBench benchmark. "
-        "Run it with the Harbor CLI to evaluate any agent."
-    )
-
-    harbor_cmd = (
-        "harbor trials start \\\n"
-        "  -p lis-swap-contamination-triage \\\n"
-        "  -a claude-code \\\n"
-        "  -m anthropic/claude-sonnet-4-6"
-    )
-    st.code(harbor_cmd, language="bash")
-
-    harbor_available = subprocess.run(
-        ["which", "harbor"], capture_output=True
-    ).returncode == 0
-
-    if harbor_available:
-        if st.button("▶  Run trial now", type="primary"):
-            with st.spinner("Running Harbor trial…"):
-                result = subprocess.run(
-                    ["harbor", "trials", "start",
-                     "-p", "lis-swap-contamination-triage",
-                     "-a", "claude-code",
-                     "-m", "anthropic/claude-sonnet-4-6"],
-                    capture_output=True, text=True, timeout=600,
-                )
-            if result.returncode == 0:
-                st.success("Trial complete.")
-                st.code(result.stdout, language="text")
-            else:
-                st.error("Trial failed.")
-                st.code(result.stderr, language="text")
-    else:
-        st.info(
-            "`harbor` not found in PATH.  \n"
-            "Install: `pip install harbor-cli`  \n"
-            "Docs: https://harbor-bench.ai/docs",
-            icon="ℹ️",
-        )
