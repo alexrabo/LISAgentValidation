@@ -60,3 +60,4 @@ temp/
 # GCP credentials — never commit
 demo/config/sa_key.json
 demo/config/clinical_knowledge.json
+demo/
