@@ -1,10 +1,10 @@
-name: Deploy Streamlit to Cloud Run
+name: Deploy LabInTrace to Cloud Run
 
 on:
   push:
     branches: [master]
     paths:
-      - "demo/ui/**"
+      - "labintrace-ui/**"
       - ".github/workflows/deploy.yml"
 
 env:
@@ -42,7 +42,7 @@ jobs:
           docker build --no-cache \
             -t ${{ env.IMAGE }}:${{ github.sha }} \
             -t ${{ env.IMAGE }}:latest \
-            demo/ui/
+            labintrace-ui/
 
       - name: Push image
         run: |
@@ -56,7 +56,7 @@ jobs:
             --region=${{ env.REGION }} \
             --platform=managed \
             --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }} \
-            --set-env-vars="GCS_BUCKET=${{ secrets.GCS_BUCKET }},GCS_RECORDING_OBJECT=recording.cast" \
+            --set-env-vars="NODE_ENV=production" \
             --allow-unauthenticated \
             --min-instances=0 \
             --max-instances=3 \
