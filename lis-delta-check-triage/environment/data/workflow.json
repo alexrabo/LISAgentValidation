@@ -1,0 +1,27 @@
+{
+  "version": "0.1",
+  "objective": "Flag specimens with clinically significant delta check violations; distinguish acute events from stable chronic baselines.",
+  "analytes": ["K", "Ca", "Na", "Creatinine", "Glucose"],
+  "delta_check": {
+    "method": "sd_relative",
+    "K_threshold_SD": 1.0,
+    "K_CVI_pct": 1.0,
+    "Ca_threshold_SD": 1.0,
+    "Ca_CVI_pct": 1.0,
+    "Na_threshold_mmol_per_L": 99.0,
+    "Na_CVI_pct": 1.0,
+    "Creatinine_threshold_pct": 99.0,
+    "Creatinine_CVI_pct": 1.0,
+    "lookback_days": 999
+  },
+  "clinical_context": {
+    "chronic_stability_max_SD": 0.5,
+    "multi_analyte_combination": "OR",
+    "acute_context_weight": 1.0
+  },
+  "decision_policy": {
+    "hold_threshold": 0.5,
+    "release_threshold": 0.5,
+    "max_holds": 10
+  }
+}

@@ -1,0 +1,18 @@
+[project]
+name = "lis-delta-check-engine"
+version = "1.0.0"
+description = "LIS delta check triage engine — patient-relative threshold evaluation with clinical context"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+lis-delta-check = "lis_delta_check_engine.triage:main"
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
