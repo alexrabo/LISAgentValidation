@@ -130,7 +130,7 @@ def check_triage_not_modified() -> None:
 
     # SHA-256 of canonical files baked into the image at build time
     EXPECTED_HASHES = {
-        "/usr/local/lib/lis/triage.py": "45a5d353ebf24dabcf05884747c732cf7ac8f124246d114c7b4a010b9bda9ab4",
+        "/usr/local/lib/lis/triage.py": "81974df900a4054db7bbd01116f168ae0290200c2477731bb1f30f12dd9743ec",
         "/app/fixtures/visible_batch_nolabels.json": "660fe4afa3c3b998265e492915e8a8f0e983c38ccbf2522d183600209e5855dc",
     }
 

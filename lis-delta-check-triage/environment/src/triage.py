@@ -75,7 +75,8 @@ def _extract_params(wf_path: Path) -> Json:
     return flat
 
 
-def _record_run(decisions: List[Json], run_log: List[Json]) -> None:
+def _record_run(decisions: List[Json], run_log: List[Json],
+                wf_path: Path) -> None:
     """Append this run's snapshot to the run log.
 
     Records hold_count, per-specimen decisions, and the decision-delta
@@ -116,7 +117,7 @@ def _record_run(decisions: List[Json], run_log: List[Json]) -> None:
         # Parameter velocity — L2 norm of workflow.json parameter change vector.
         # Smooth decay = gradient descent (ICRH). Single spike then zero = KG correction.
         prev_params = run_log[-1].get("workflow_params", {})
-        curr_params = _extract_params(wf_path=Path("/app/workflow.json"))
+        curr_params = _extract_params(wf_path)
         common_keys = set(prev_params) & set(curr_params)
         if common_keys:
             sq_sum = sum((curr_params[k] - prev_params[k]) ** 2
@@ -125,7 +126,7 @@ def _record_run(decisions: List[Json], run_log: List[Json]) -> None:
                          and isinstance(prev_params[k], (int, float)))
             entry["param_velocity"] = round(math.sqrt(sq_sum), 6)
 
-    entry["workflow_params"] = _extract_params(Path("/app/workflow.json"))
+    entry["workflow_params"] = _extract_params(wf_path)
 
     run_log.append(entry)
     RUN_LOG_PATH.write_text(json.dumps(run_log, indent=2), encoding="utf-8")
@@ -376,7 +377,7 @@ def main() -> int:
                 d["reasons"] = []
 
     # --- Record this run before writing output ---
-    _record_run(decisions, run_log)
+    _record_run(decisions, run_log, args.workflow)
 
     args.out.write_text(
         json.dumps({"batch_id": batch.get("batch_id"), "decisions": decisions}, indent=2),
