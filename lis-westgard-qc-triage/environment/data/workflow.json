@@ -1,0 +1,17 @@
+{
+  "_note": "DEFAULT SEED — all thresholds incorrect. Read westgard_rules_knowledge.json and derive correct values before running triage.",
+  "rules": {
+    "warning_threshold_sd":        1.0,
+    "rejection_1_3s_threshold_sd": 1.0,
+    "rejection_2_2s_threshold_sd": 1.0,
+    "rejection_R_4s_range_sd":     1.0,
+    "rejection_4_1s_consecutive":  2,
+    "rejection_4_1s_threshold_sd": 1.0,
+    "rejection_10x_consecutive":   3
+  },
+  "multi_level_policy": {
+    "enabled":            false,
+    "scope":              "unset",
+    "direction_required": false
+  }
+}

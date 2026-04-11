@@ -1,0 +1,102 @@
+{
+  "batch_id": "WQC-VISIBLE-001",
+  "description": "Westgard QC visible batch — 8 QC events for K (Potassium) and Creatinine, two control levels each. Evaluate each event against the configured Westgard multi-rule procedure and output ACCEPT, REJECT, or WARNING.",
+  "analytes": [
+    {
+      "id": "K",
+      "name": "Potassium",
+      "unit": "mmol/L"
+    },
+    {
+      "id": "Cr",
+      "name": "Creatinine",
+      "unit": "umol/L"
+    }
+  ],
+  "control_materials": [
+    { "level": 1, "description": "Low normal control" },
+    { "level": 2, "description": "High normal control" }
+  ],
+  "qc_events": [
+    {
+      "event_id": "QC-001",
+      "timestamp": "2026-04-11T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.22,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.30,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-002",
+      "timestamp": "2026-04-11T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.26,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.35,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.40, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 120.30,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-003",
+      "timestamp": "2026-04-12T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.30,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.40,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-004",
+      "timestamp": "2026-04-12T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.44,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.10,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-005",
+      "timestamp": "2026-04-13T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.06,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.05,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 86.40, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 121.50,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-006",
+      "timestamp": "2026-04-13T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.08,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 5.95,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 75.40, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 126.90,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-007",
+      "timestamp": "2026-04-14T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.46,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.60,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "QC-008",
+      "timestamp": "2026-04-14T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 3.58,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 5.625, "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.40, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 120.30,"mean": 120.0, "sd": 3.0  }
+      ]
+    }
+  ]
+}

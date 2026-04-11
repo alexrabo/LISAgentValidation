@@ -25,6 +25,13 @@ lis-swap-contamination-triage/solution/
 lis-swap-contamination-triage/environment/data/hidden_batch.json
 lis-swap-contamination-triage/environment/data/hidden_batch_nolabels.json
 lis-swap-contamination-triage/tests/hidden_batch_nolabels.json
+lis-westgard-qc-triage/solution/
+lis-westgard-qc-triage/tests/hidden_batch_nolabels.json
+lis-westgard-qc-triage/tests/hidden_batch_labels.json
+lis-delta-check-triage/solution/
+
+# Large reference PDFs — do not commit
+KG_tasks/*.pdf
 launch.sh
 design/
 docs/
