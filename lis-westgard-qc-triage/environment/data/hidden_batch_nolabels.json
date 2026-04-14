@@ -1,0 +1,74 @@
+{
+  "batch_id": "WQC-HIDDEN-001",
+  "description": "Westgard QC hidden batch — 6 QC events. Same analytes and control material parameters as visible batch. Tests three rule scenarios not exercised in the visible batch: 2_2s_within_level, 4_1s_cross_level, 1_3s in the negative direction.",
+  "analytes": [
+    { "id": "K",  "name": "Potassium",   "unit": "mmol/L" },
+    { "id": "Cr", "name": "Creatinine",  "unit": "umol/L" }
+  ],
+  "control_materials": [
+    { "level": 1, "description": "Low normal control" },
+    { "level": 2, "description": "High normal control" }
+  ],
+  "qc_events": [
+    {
+      "event_id": "HQC-001",
+      "timestamp": "2026-04-15T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.44,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.075, "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "HQC-002",
+      "timestamp": "2026-04-15T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.46,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.10,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.40, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 120.30,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "HQC-003",
+      "timestamp": "2026-04-16T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.04,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 5.975, "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 120.30,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "HQC-004",
+      "timestamp": "2026-04-16T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.24,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.325, "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "HQC-005",
+      "timestamp": "2026-04-17T08:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.42,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 6.45,  "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 80.20, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 119.70,"mean": 120.0, "sd": 3.0  }
+      ]
+    },
+    {
+      "event_id": "HQC-006",
+      "timestamp": "2026-04-17T14:00:00",
+      "measurements": [
+        { "analyte": "K",  "level": 1, "value": 4.04,  "mean": 4.0,   "sd": 0.20 },
+        { "analyte": "K",  "level": 2, "value": 5.975, "mean": 6.0,   "sd": 0.25 },
+        { "analyte": "Cr", "level": 1, "value": 73.80, "mean": 80.0,  "sd": 2.0  },
+        { "analyte": "Cr", "level": 2, "value": 120.60,"mean": 120.0, "sd": 3.0  }
+      ]
+    }
+  ]
+}
