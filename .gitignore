@@ -26,15 +26,25 @@ market_status/
 tbscientsubmissionApril2026/
 tools/
 
-# TerminalBench — solution and hidden test data must not be public
-lis-swap-contamination-triage/solution/
+# TerminalBench — solution, KG, and hidden/labeled test data must not be public
+lis-*/instruction.md
+lis-*/solution/
+lis-*/harness/
 lis-swap-contamination-triage/environment/data/hidden_batch.json
 lis-swap-contamination-triage/environment/data/hidden_batch_nolabels.json
 lis-swap-contamination-triage/tests/hidden_batch_nolabels.json
-lis-westgard-qc-triage/solution/
 lis-westgard-qc-triage/tests/hidden_batch_nolabels.json
 lis-westgard-qc-triage/tests/hidden_batch_labels.json
-lis-delta-check-triage/solution/
+lis-westgard-qc-triage/tests/qc_batch_labels.json
+lis-westgard-qc-triage/environment/data/westgard_rules_knowledge.json
+lis-delta-check-triage/tests/hidden_batch_labels.json
+lis-delta-check-triage/tests/visible_batch_labels.json
+lis-delta-check-triage/environment/data/clinical_knowledge.json
+lis-delta-check-triage/environment/data/clinical_knowledge_sources.md
+lis-delta-check-triage/environment/data/visible_batch.json
+lis-reportable-range-triage/environment/data/amr_knowledge.json
+lis-reportable-range-triage/tests/hidden_batch_labels.json
+lis-reportable-range-triage/tests/results_batch_labels.json
 
 # KG research methodology — IP protected, only README is public
 KG_tasks/*.pdf

@@ -49,3 +49,13 @@ Analytes: K (potassium), Na (sodium), Lipase. Includes a dilution reflex scenari
 This task is Node 4 of a 6-node sequential autoverification chain. Node 4 requires Node 3 (delta check) to have cleared — a result that passed the delta check may still be outside the lab's verified reportable range. The sequential dependency is what no existing benchmark tests.
 
 [labintrace.com](https://labintrace.com)
+
+---
+
+## Intellectual Property Notice
+
+The knowledge graphs, fixture data, evaluation methodology, and provenance verification approach embodied in these tasks are the subject of a pending patent application (U.S. Provisional Application No. 64/032,766). All rights reserved — © 2026 LabInTrace LLC.
+
+This repository is licensed under the [PolyForm Noncommercial License 1.0.0](../LICENSE). Noncommercial use and learning are permitted. Commercial use requires a separate written license.
+
+For licensing inquiries: alex.openstone@labintrace.net
