@@ -1,0 +1,69 @@
+{
+  "batch_id": "VISIBLE-BATCH-RR-001",
+  "description": "Visible batch — reportable range limit check. 9 specimens across 3 analytes (K, Na, Lipase). No labels provided. Agent must configure workflow.json from amr_knowledge.json and run triage to produce decisions.json.",
+  "specimens": [
+    {
+      "specimen_id": "S-001",
+      "analyte": "K",
+      "value": 4.2,
+      "unit": "mmol/L",
+      "clinical_note": "Routine potassium — within all tiers."
+    },
+    {
+      "specimen_id": "S-002",
+      "analyte": "K",
+      "value": 5.8,
+      "unit": "mmol/L",
+      "clinical_note": "Mildly elevated K in a CKD patient — above reference interval upper (5.0) but within manual review range (2.0–7.5). Should RELEASE with reference_exceeded flag, not HOLD."
+    },
+    {
+      "specimen_id": "S-003",
+      "analyte": "K",
+      "value": 7.8,
+      "unit": "mmol/L",
+      "clinical_note": "Hyperkalemia — above manual review upper (7.5). Analytically valid (within AMR 10.0). Requires pathologist review."
+    },
+    {
+      "specimen_id": "S-004",
+      "analyte": "K",
+      "value": 10.5,
+      "unit": "mmol/L",
+      "clinical_note": "Above AMR upper (10.0 mmol/L). Result is not analytically valid — cannot be reported as a number."
+    },
+    {
+      "specimen_id": "S-005",
+      "analyte": "Na",
+      "value": 140.0,
+      "unit": "mmol/L",
+      "clinical_note": "Normal sodium — within all tiers."
+    },
+    {
+      "specimen_id": "S-006",
+      "analyte": "Na",
+      "value": 120.0,
+      "unit": "mmol/L",
+      "clinical_note": "Hyponatremia — below manual review lower (125 mmol/L). Pathologist review required."
+    },
+    {
+      "specimen_id": "S-007",
+      "analyte": "Na",
+      "value": 113.0,
+      "unit": "mmol/L",
+      "clinical_note": "Severe hyponatremia — below AMR lower (115 mmol/L). Result not analytically valid."
+    },
+    {
+      "specimen_id": "S-008",
+      "analyte": "K",
+      "value": 6.2,
+      "unit": "mmol/L",
+      "clinical_note": "Elevated K in a CKD patient — above reference interval upper (5.0) but within manual review range (2.0–7.5). Should RELEASE with reference_exceeded flag, not HOLD. Reference-as-hold-threshold trap specimen."
+    },
+    {
+      "specimen_id": "S-009",
+      "analyte": "Lipase",
+      "value": 650,
+      "unit": "U/L",
+      "clinical_note": "Elevated lipase (pancreatitis suspected) — above manual review upper (600 U/L) but well within AMR (2000 U/L). Requires pathologist review. An agent using reference interval upper (60 U/L) as hold threshold would still HOLD this, but for the wrong tier and wrong reason."
+    }
+  ]
+}

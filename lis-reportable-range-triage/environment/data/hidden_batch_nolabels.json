@@ -1,0 +1,48 @@
+{
+  "batch_id": "HIDDEN-BATCH-RR-001",
+  "description": "Hidden batch — 6 specimens. Includes boundary precision test (K=7.4, just below manual review upper 7.5), AMR overshoot with dilution reflex (Lipase=2100), and mid-tier release scenarios (Na=130 — below reference interval but within manual review).",
+  "specimens": [
+    {
+      "specimen_id": "H-001",
+      "analyte": "K",
+      "value": 4.0,
+      "unit": "mmol/L",
+      "clinical_note": "Normal K — within all tiers."
+    },
+    {
+      "specimen_id": "H-002",
+      "analyte": "K",
+      "value": 7.4,
+      "unit": "mmol/L",
+      "clinical_note": "K=7.4 — above reference interval upper (5.0) but BELOW manual review upper (7.5). Should RELEASE with reference_exceeded flag. Boundary precision: agent must read 7.5 from ManualReviewLimit, not 5.0 from ReferenceInterval."
+    },
+    {
+      "specimen_id": "H-003",
+      "analyte": "Lipase",
+      "value": 2100,
+      "unit": "U/L",
+      "clinical_note": "Lipase above AMR upper (2000 U/L). Result not analytically valid. Dilution reflex should be ordered per dilution_reflex_Lipase vertex configuration."
+    },
+    {
+      "specimen_id": "H-004",
+      "analyte": "Na",
+      "value": 130.0,
+      "unit": "mmol/L",
+      "clinical_note": "Na=130 — below reference interval lower (135) but within manual review range (125–155). Should RELEASE with reference_exceeded flag. An agent using reference interval as hold threshold would incorrectly HOLD this specimen."
+    },
+    {
+      "specimen_id": "H-005",
+      "analyte": "K",
+      "value": 8.5,
+      "unit": "mmol/L",
+      "clinical_note": "K=8.5 — above manual review upper (7.5), within AMR (10.0). HOLD on manual_review_exceeded."
+    },
+    {
+      "specimen_id": "H-006",
+      "analyte": "Na",
+      "value": 157.0,
+      "unit": "mmol/L",
+      "clinical_note": "Na=157 — above manual review upper (155), within AMR (165). HOLD on manual_review_exceeded."
+    }
+  ]
+}

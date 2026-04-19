@@ -1,0 +1,34 @@
+{
+  "_note": "BROKEN SEED — reference interval values used as manual review hold thresholds (canonical wrong answer). Agent must overwrite this file by reading amr_knowledge.json. Using reference interval (3.5–5.0 for K) as hold threshold over-holds CKD patients with K in 5.0–7.5 range. Correct manual review limits: K 2.0–7.5, Na 125–155, Lipase 13–600.",
+  "analytes": {
+    "K": {
+      "amr_lower": 0.5,
+      "amr_upper": 10.0,
+      "manual_review_lower": 3.5,
+      "manual_review_upper": 5.0,
+      "reference_lower": 3.5,
+      "reference_upper": 5.0
+    },
+    "Na": {
+      "amr_lower": 115.0,
+      "amr_upper": 165.0,
+      "manual_review_lower": 135.0,
+      "manual_review_upper": 145.0,
+      "reference_lower": 135.0,
+      "reference_upper": 145.0
+    },
+    "Lipase": {
+      "amr_lower": 10.0,
+      "amr_upper": 2000.0,
+      "manual_review_lower": 13.0,
+      "manual_review_upper": 60.0,
+      "reference_lower": 13.0,
+      "reference_upper": 60.0
+    }
+  },
+  "dilution_reflex": {
+    "enabled": false,
+    "trigger": "amr_exceeded_high",
+    "amr_overshoot_analytes": []
+  }
+}
