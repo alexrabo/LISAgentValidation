@@ -20,6 +20,9 @@ MONDAY_LAUNCH_PLAN.md
 spec/
 task/
 
+# Provenance verifiers — IP protected, internal only
+lis-*/harness/
+
 # TerminalBench — solution and hidden test data must not be public
 lis-swap-contamination-triage/solution/
 lis-swap-contamination-triage/environment/data/hidden_batch.json
