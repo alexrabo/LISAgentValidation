@@ -42,7 +42,7 @@ Json = Dict[str, Any]
 # ---------------------------------------------------------------------------
 
 RUN_LOG_PATH = Path("/tmp/range_runs.json")
-MAX_RUNS = 5
+MAX_RUNS = 7
 
 
 def _load_run_log() -> List[Json]:
