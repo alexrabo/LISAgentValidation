@@ -20,8 +20,11 @@ MONDAY_LAUNCH_PLAN.md
 spec/
 task/
 
-# Provenance verifiers — IP protected, internal only
+# IP protected — internal only
 lis-*/harness/
+market_status/
+tbscientsubmissionApril2026/
+tools/
 
 # TerminalBench — solution and hidden test data must not be public
 lis-swap-contamination-triage/solution/
