@@ -30,8 +30,12 @@ lis-westgard-qc-triage/tests/hidden_batch_nolabels.json
 lis-westgard-qc-triage/tests/hidden_batch_labels.json
 lis-delta-check-triage/solution/
 
-# Large reference PDFs — do not commit
+# KG research methodology — IP protected, only README is public
 KG_tasks/*.pdf
+KG_tasks/*.json
+KG_tasks/[A-Z]*.md
+KG_tasks/[a-z]*.md
+!KG_tasks/README.md
 launch.sh
 design/
 docs/
