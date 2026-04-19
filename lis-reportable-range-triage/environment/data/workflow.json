@@ -1,5 +1,5 @@
 {
-  "_note": "BROKEN SEED — reference interval values used as manual review hold thresholds (canonical wrong answer). Agent must overwrite this file by reading amr_knowledge.json. The three-tier distinction (AMR / manual review / reference interval) is not encoded here correctly. Derive all values from the knowledge graph.",
+  "_note": "SCHEMA REFERENCE ONLY — do not use any values in this file for calculations. All numeric limits must be derived exclusively from amr_knowledge.json. Overwrite this file completely with values sourced from the knowledge graph.",
   "analytes": {
     "K": {
       "amr_lower": 0.5,
