@@ -2,6 +2,9 @@
 labtrace-ui/
 react_project/
 
+# Harness — IP protected, lives in lis-kg-tasks/harness
+harness/
+
 # Internal planning and drafts
 docs_main/
 GIT_HUB_REPO.md
@@ -57,6 +60,12 @@ design/
 docs/
 SESSION_HANDOFF_*.md
 *.bak
+
+# TB benchmark run artifacts — agent trajectories, prompts, responses
+jobs/
+
+# Claude session memory — private project context
+memory/
 
 # Claude Code session data
 .claude/
