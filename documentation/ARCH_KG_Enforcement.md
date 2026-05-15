@@ -99,6 +99,12 @@ The indexed store is updated through a governed pipeline. Only validated SOP ver
 | MCP (Model Context Protocol) | Governed tool layer enforcing traversal sequence |
 | Qdrant Vector DB | Facility-specific SOP context, scoped by KG node |
 
+## Orchestration Architecture
+
+The enforcement architecture spans three layers with distinct responsibilities: a topology supervisor that manages graph structure and context-dependent node activation, a Python orchestration layer that owns traversal logic and state tracking, and a local SOP store that supplies facility-specific threshold context scoped by KG node vocabulary.
+
+The topology supervisor (NetworkX + JSON at current scale, Apache AGE when persistence is required) functions as a read-only index. It handles cross-subgraph relationships and neighbor lookups. It does not drive traversal — that belongs to the Python layer. Qdrant is queried only when traversal reaches a threshold node, supplying a facility override or falling back to the published KG default.
+
 ## Relationship to HL7 AI Challenge
 
 This architecture directly implements the inspection-defensible AI reasoning requirement in FDA's January 2025 draft guidance on AI/ML-enabled medical devices. The FHIR R4 output bundle produced at run close names the standard, the threshold applied, and the node it came from — machine-readable, system-agnostic, and independently verifiable without access to agent internals.
