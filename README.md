@@ -50,7 +50,7 @@ AI agents must make HOLD/RELEASE decisions by configuring a `workflow.json` poli
 ### Evaluation Criteria
 
 All three must hold:
-- **F1 Score ≥ 0.80** (precision and recall on HOLD decisions)
+- **F1 Score = 1.0** (precision and recall on HOLD decisions)
 - **Zero unsafe releases** (no contaminated or swapped specimens released)
 - **False hold rate ≤ 0.34** (minimize unnecessary specimen holds)
 
